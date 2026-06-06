@@ -173,7 +173,8 @@ label { font-size: 0.78rem; font-weight: 600; color: var(--text-2); display: blo
 }
 .cta-btn:hover { background: var(--gold-2); }
 
-.sidebar-block { padding: 0.4rem 0.2rem; }
+.sidebar-block { padding: 0.4rem 0; }
+.sidebar-block > .lang-toggle { margin-left: 0.7rem; }
 .lang-toggle { display: inline-flex; background: rgba(255,255,255,0.05); border: 1px solid var(--sidebar-line); border-radius: 8px; padding: 2px; }
 .lang-toggle button {
   background: transparent; border: none; color: var(--sidebar-text); padding: 0.3rem 0.7rem;
@@ -181,13 +182,13 @@ label { font-size: 0.78rem; font-weight: 600; color: var(--text-2); display: blo
 }
 .lang-toggle button.active { background: #fff; color: var(--sidebar-bg); }
 
-.sidebar-footer { padding: 0.4rem 0.4rem 0.2rem; }
-.signed-name { color: #fff; font-weight: 600; font-size: 0.9rem; }
-.signed-role { color: var(--sidebar-label); font-size: 0.74rem; margin-top: 0.1rem; }
+.sidebar-footer { padding: 0.4rem 0 0.2rem; }
+.signed-name { color: #fff; font-weight: 600; font-size: 0.9rem; padding-left: 0.7rem; }
+.signed-role { color: var(--sidebar-label); font-size: 0.74rem; margin-top: 0.1rem; padding-left: 0.7rem; }
 .signout-btn {
   margin-top: 0.7rem; width: 100%; display: flex; align-items: center; gap: 0.5rem; justify-content: flex-start;
   background: transparent; border: none; color: var(--sidebar-text); cursor: pointer;
-  font-size: 0.86rem; font-weight: 500; padding: 0.4rem 0; font-family: var(--font-sans);
+  font-size: 0.86rem; font-weight: 500; padding: 0.4rem 0.4rem 0.4rem 0.7rem; font-family: var(--font-sans);
 }
 .signout-btn:hover { color: #fff; }
 
