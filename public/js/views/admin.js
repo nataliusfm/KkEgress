@@ -94,7 +94,7 @@ export function renderAdmin(root, { api }) {
     const file = e.target.files[0];
     if (!file) return;
     root.querySelector('#s-logo-meta').textContent = 'Processing…';
-    const blob = await compressImage(file, { maxBytes: 90 * 1024, maxDim: 320 });
+    const blob = await compressImage(file, { maxBytes: 120 * 1024, maxDim: 320, mime: 'image/png' });
     const reader = new FileReader();
     reader.onload = () => { setPreview(reader.result); root.querySelector('#s-logo-meta').textContent = `Ready · ${(blob.size / 1024).toFixed(0)} KB. Click Save Settings.`; };
     reader.readAsDataURL(blob);

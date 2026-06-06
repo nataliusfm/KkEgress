@@ -65,7 +65,7 @@ h1, h2, h3 { font-family: var(--font-sans); font-weight: 700; letter-spacing: -0
   content: ''; position: absolute; left: -0.9rem; top: 50%; transform: translateY(-50%);
   width: 3px; height: 62%; background: #8ea2ff; border-radius: 0 3px 3px 0;
 }
-.brand-crest.has-logo { background: #fff; border-color: transparent; }
+.brand-crest.has-logo { background: transparent; border-color: transparent; }
 .branch-ico { width: 18px; text-align: center; opacity: 0.85; }
 
 .cta-btn {

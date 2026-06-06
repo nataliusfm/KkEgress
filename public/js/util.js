@@ -54,10 +54,11 @@ export function conditionPill(condition) {
 }
 
 /**
- * Compress an image File/Blob to JPEG under a target byte size using a canvas.
+ * Compress an image File/Blob under a target byte size using a canvas.
  * Returns a Blob. Iteratively lowers quality and dimensions until it fits.
+ * Pass mime: 'image/png' to preserve transparency (e.g. for logos).
  */
-export async function compressImage(file, { maxBytes = 200 * 1024, maxDim = 1280 } = {}) {
+export async function compressImage(file, { maxBytes = 200 * 1024, maxDim = 1280, mime = 'image/jpeg' } = {}) {
   const bitmap = await createImageBitmap(file);
   let scale = Math.min(1, maxDim / Math.max(bitmap.width, bitmap.height));
   let quality = 0.85;
@@ -67,11 +68,11 @@ export async function compressImage(file, { maxBytes = 200 * 1024, maxDim = 1280
     const h = Math.max(1, Math.round(bitmap.height * scale));
     const canvas = document.createElement('canvas');
     canvas.width = w; canvas.height = h;
-    canvas.getContext('2d').drawImage(bitmap, 0, 0, w, h);
-    const blob = await new Promise((r) => canvas.toBlob(r, 'image/jpeg', quality));
+    canvas.getContext('2d').drawImage(bitmap, 0, 0, w, h); // transparent canvas preserves PNG alpha
+    const blob = await new Promise((r) => canvas.toBlob(r, mime, quality));
     if (blob && blob.size <= maxBytes) return blob;
-    // Tighten: drop quality first, then shrink dimensions.
-    if (quality > 0.5) quality -= 0.12;
+    // Tighten: drop JPEG quality first, then shrink dimensions (PNG only scales).
+    if (mime === 'image/jpeg' && quality > 0.5) quality -= 0.12;
     else scale *= 0.82;
     if (attempt === 7) return blob; // best effort
   }
