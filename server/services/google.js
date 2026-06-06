@@ -18,10 +18,10 @@ import { config } from '../config.js';
  */
 
 const SHEETS_HEADERS = [
-  'Drill ID', 'Drill Name', 'Date', 'Teacher Name', 'Employee ID', 'Team/Class',
-  'Assembly Point', 'Latitude', 'Longitude', 'Assigned Count', 'Present Count',
-  'Missing Count', 'Condition', 'Notes', 'Photo URL', 'Submission Timestamp',
-  'Last Update Timestamp',
+  'Drill ID', 'Drill Name', 'Date', 'Timestamp', 'Email', 'SAYA',
+  'Kelas/Tim', 'Lokasi Assembly', 'Jumlah Hadir Hari Ini', 'Jumlah Bersama Saya',
+  'Nama Wali Kelas', 'Catatan', 'Latitude', 'Longitude', 'GeoAddress',
+  'Photo URL', 'Last Update',
 ];
 
 let serviceAuth = null;
@@ -81,19 +81,19 @@ export function reportToRow(report, drill) {
     drill?.id || report.drillId,
     drill?.name || '',
     drill?.date || '',
-    report.teacherName || '',
-    report.employeeId || '',
-    report.teamName || '',
-    report.assemblyPointName || '',
+    report.submittedAt || '',
+    report.reporterEmail || '',
+    report.role === 'PENGHUNI' ? 'MENEMUKAN PENGHUNI' : 'WALI KELAS ATAU TEAM LEADER',
+    report.className || '',
+    report.assemblyPoint || '',
+    report.rosterToday ?? '',
+    report.headcount ?? '',
+    report.waliName || '',
+    report.notes || '',
     report.lat ?? '',
     report.lng ?? '',
-    report.assigned ?? '',
-    report.present ?? '',
-    report.missing ?? '',
-    report.condition || '',
-    report.conditionNotes || '',
+    report.geoAddress || '',
     report.photoUrl || '',
-    report.submittedAt || '',
     report.lastUpdatedAt || '',
   ];
 }
@@ -171,7 +171,7 @@ export async function uploadPhotoToDrive({ buffer, mimeType, drill, report }) {
 
     const safe = (s) => String(s || '').replace(/[^\w-]+/g, '-').replace(/^-+|-+$/g, '');
     const ts = (report.submittedAt || new Date().toISOString()).replace(/[:.]/g, '-');
-    const filename = `${safe(drill?.name)}_${safe(report.teamName)}_${safe(report.teacherName)}_${ts}.jpg`;
+    const filename = `${safe(drill?.name)}_${safe(report.className)}_${safe(report.reporterName)}_${ts}.jpg`;
 
     const { Readable } = await import('stream');
     const created = await drive.files.create({
@@ -256,7 +256,7 @@ export async function uploadPhotoToGooglePhotos({ buffer, drill, report }) {
     ).then((r) => r.text());
 
     // Step 2: create media item in album
-    const description = [drill?.name, report.teamName, report.condition]
+    const description = [drill?.name, report.className, report.assemblyPoint]
       .filter(Boolean)
       .join(' · ');
     const result = await photosRequest(null, accessToken, 'mediaItems:batchCreate', {
@@ -264,7 +264,7 @@ export async function uploadPhotoToGooglePhotos({ buffer, drill, report }) {
       newMediaItems: [
         {
           description,
-          simpleMediaItem: { uploadToken, fileName: `${report.teamName || 'team'}.jpg` },
+          simpleMediaItem: { uploadToken, fileName: `${report.className || 'team'}.jpg` },
         },
       ],
     });

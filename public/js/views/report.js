@@ -1,5 +1,6 @@
-// Teacher reporting form: GPS capture, attendance, condition, photo (compressed
-// to <=200KB), duplicate prevention, edit with revision history, offline queue.
+// Teacher / team-leader reporting form — mirrors the school's evacuation form.
+// SAYA: Wali Kelas (knows the roster) or Menemukan Penghuni (found students).
+// Multiple submissions are allowed (students scatter across assembly points).
 import { el, toast, compressImage, fmtTime, escapeHtml } from '../util.js';
 import { queueReport } from '../offline.js';
 
@@ -8,8 +9,8 @@ export function renderReport(root, { state, api, socket }) {
   const user = state.user;
 
   if (!drill || drill.status !== 'Active') {
-    root.appendChild(el(`<div class="card"><h2>No active drill</h2>
-      <p class="muted">There is no active drill right now. The reporting form will appear when an administrator starts a drill.</p></div>`));
+    root.appendChild(el(`<div class="card"><h2>Tidak ada latihan aktif</h2>
+      <p class="muted">Formulir laporan akan muncul saat administrator memulai latihan.</p></div>`));
     return;
   }
 
@@ -18,111 +19,106 @@ export function renderReport(root, { state, api, socket }) {
       <div id="status-banner"></div>
       <form id="report-form">
         <div class="card">
-          <h2>Teacher Information</h2>
+          <h2>SAYA</h2>
+          <div class="field">
+            <select id="f-role">
+              <option value="WALI_KELAS">WALI KELAS ATAU TEAM LEADER</option>
+              <option value="PENGHUNI">MENEMUKAN PENGHUNI</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="card">
           <div class="grid-2">
-            <div class="field"><label>Teacher Name</label><input id="f-teacher" disabled></div>
-            <div class="field"><label>Employee ID</label><input id="f-empid"></div>
-            <div class="field"><label>Team / Class Name</label><input id="f-team"></div>
-            <div class="field"><label>Assembly Point</label><select id="f-assembly"></select></div>
+            <div class="field"><label>Kelas / Tim Tanggung Jawab Saya</label><input id="f-class" list="class-list" placeholder="mis. 9A" required></div>
+            <div class="field"><label>Lokasi Assembly Saya</label><select id="f-ap"></select></div>
+            <div class="field" id="wrap-roster"><label>Siswa/Tim Saya yang Masuk Hari Ini (angka)</label><input id="f-roster" type="number" min="0" value="0"></div>
+            <div class="field"><label>Jumlah Siswa/Tim yang Bersama Saya (angka)</label><input id="f-headcount" type="number" min="0" value="0" required></div>
+            <div class="field" id="wrap-wali"><label>Nama Wali Kelas / Penanggung Jawab Grup</label><input id="f-wali"></div>
           </div>
+          <div class="field"><label>Catatan (opsional — cedera, siswa hilang, observasi)</label><textarea id="f-notes" rows="2"></textarea></div>
         </div>
 
         <div class="card">
-          <div class="section-head"><h2>GPS Location</h2>
-            <button type="button" class="btn btn-sm btn-ghost" id="refresh-gps">↻ Refresh</button></div>
-          <div class="gps-box" id="gps-box">Acquiring location…</div>
+          <div class="section-head"><h2>Lokasi GPS</h2>
+            <button type="button" class="btn btn-sm btn-ghost" id="refresh-gps">↻ Perbarui</button></div>
+          <div class="gps-box" id="gps-box">Mengambil lokasi…</div>
         </div>
 
         <div class="card">
-          <h2>Attendance</h2>
-          <div class="grid-3">
-            <div class="field"><label>Total Assigned</label><input id="f-assigned" type="number" min="0" value="0"></div>
-            <div class="field"><label>Present</label><input id="f-present" type="number" min="0" value="0"></div>
-            <div class="field"><label>Missing (auto)</label><input id="f-missing" type="number" disabled value="0"></div>
-          </div>
-        </div>
-
-        <div class="card">
-          <h2>Condition</h2>
-          <div class="field"><select id="f-condition">
-            <option>All Safe</option><option>Minor Injuries</option>
-            <option>Serious Injuries</option><option>Medical Assistance Required</option>
-          </select></div>
-          <div class="field hidden" id="cond-notes-wrap"><label>Condition Notes</label>
-            <textarea id="f-condnotes" rows="2" placeholder="Describe the situation…"></textarea></div>
-        </div>
-
-        <div class="card">
-          <h2>Student Notes</h2>
-          <div class="field"><label>Missing Student Names</label><textarea id="f-missingnames" rows="2"></textarea></div>
-          <div class="field"><label>Injured Student Names</label><textarea id="f-injurednames" rows="2"></textarea></div>
-          <div class="field"><label>Special Observations</label><textarea id="f-observations" rows="2"></textarea></div>
-        </div>
-
-        <div class="card">
-          <h2>Team Photo</h2>
+          <h2>Foto (opsional)</h2>
           <div class="photo-drop">
             <input id="f-photo" type="file" accept="image/*" capture="environment" hidden>
-            <button type="button" class="btn btn-ghost" id="pick-photo">📷 Capture / choose photo</button>
+            <button type="button" class="btn btn-ghost" id="pick-photo">📷 Ambil / pilih foto</button>
             <div id="photo-meta" class="muted" style="margin-top:.5rem"></div>
-            <img id="photo-preview" class="photo-preview hidden" alt="Team photo preview">
+            <img id="photo-preview" class="photo-preview hidden" alt="">
           </div>
         </div>
 
         <div class="card">
-          <button type="submit" class="btn btn-primary btn-block" id="submit-btn">Submit Report</button>
+          <button type="submit" class="btn btn-primary btn-block" id="submit-btn">Kirim Laporan</button>
         </div>
       </form>
+
+      <datalist id="class-list"></datalist>
+
+      <div class="card">
+        <div class="section-head"><h2>Laporan Saya</h2><span class="muted" id="mine-count"></span></div>
+        <div id="mine-list" class="muted">Belum ada laporan.</div>
+      </div>
     </div>`));
 
-  // Pre-fill from account
-  root.querySelector('#f-teacher').value = user.name;
-  root.querySelector('#f-empid').value = user.employeeId || '';
-  root.querySelector('#f-team').value = user.teamName || '';
-  if (user.assignedStudents) root.querySelector('#f-assigned').value = user.assignedStudents;
+  const roleEl = root.querySelector('#f-role');
+  const classEl = root.querySelector('#f-class');
+  const apEl = root.querySelector('#f-ap');
+  const rosterEl = root.querySelector('#f-roster');
+  const headcountEl = root.querySelector('#f-headcount');
+  const waliEl = root.querySelector('#f-wali');
+  const notesEl = root.querySelector('#f-notes');
+  const wrapRoster = root.querySelector('#wrap-roster');
+  const wrapWali = root.querySelector('#wrap-wali');
+  const banner = root.querySelector('#status-banner');
+  const submitBtn = root.querySelector('#submit-btn');
 
-  // Assembly points
-  const assemblySel = root.querySelector('#f-assembly');
+  // Prefill from account
+  if (user.teamName) classEl.value = user.teamName;
+  waliEl.value = user.name || '';
+
+  // Role toggles roster + wali fields
+  function applyRole() {
+    const isWali = roleEl.value === 'WALI_KELAS';
+    wrapRoster.classList.toggle('hidden', !isWali);
+    wrapWali.classList.toggle('hidden', !isWali);
+  }
+  roleEl.addEventListener('change', applyRole);
+  applyRole();
+
+  // Assembly points (configured) + Lockdown
   api.get('/admin/assembly-points').then((points) => {
-    assemblySel.innerHTML = '<option value="">— select —</option>' +
-      points.map((p) => `<option value="${p.id}">${escapeHtml(p.name)}</option>`).join('');
-    if (user.assemblyPointId) assemblySel.value = user.assemblyPointId;
+    apEl.innerHTML = '<option value="">— pilih —</option>' +
+      points.map((p) => `<option value="${escapeHtml(p.name)}">${escapeHtml(p.name)}</option>`).join('') +
+      '<option value="LOCKDOWN">LOCKDOWN</option>';
+    if (user.assemblyPointId) {
+      const ap = points.find((p) => p.id === user.assemblyPointId);
+      if (ap) apEl.value = ap.name;
+    }
   });
-
-  // ── Attendance auto-calc ──
-  const assignedEl = root.querySelector('#f-assigned');
-  const presentEl = root.querySelector('#f-present');
-  const missingEl = root.querySelector('#f-missing');
-  const recalc = () => {
-    const a = Math.max(+assignedEl.value || 0, 0);
-    let p = Math.max(+presentEl.value || 0, 0);
-    if (p > a) { p = a; presentEl.value = a; }
-    missingEl.value = a - p;
-  };
-  assignedEl.addEventListener('input', recalc);
-  presentEl.addEventListener('input', recalc);
-
-  // ── Condition notes toggle ──
-  const condEl = root.querySelector('#f-condition');
-  const condWrap = root.querySelector('#cond-notes-wrap');
-  condEl.addEventListener('change', () => condWrap.classList.toggle('hidden', condEl.value === 'All Safe'));
 
   // ── GPS ──
   let gps = { lat: null, lng: null, accuracy: null, timestamp: null };
   const gpsBox = root.querySelector('#gps-box');
   function captureGps() {
-    if (!navigator.geolocation) { gpsBox.textContent = 'Geolocation not supported on this device.'; return; }
-    gpsBox.textContent = 'Acquiring location…';
+    if (!navigator.geolocation) { gpsBox.textContent = 'Geolokasi tidak didukung perangkat ini.'; return; }
+    gpsBox.textContent = 'Mengambil lokasi…';
     navigator.geolocation.getCurrentPosition((pos) => {
       gps = { lat: pos.coords.latitude, lng: pos.coords.longitude, accuracy: pos.coords.accuracy, timestamp: new Date().toISOString() };
-      gpsBox.innerHTML = `📍 <strong>${gps.lat.toFixed(6)}, ${gps.lng.toFixed(6)}</strong><br>
-        Accuracy: ±${Math.round(gps.accuracy)} m · ${fmtTime(gps.timestamp)}`;
+      gpsBox.innerHTML = `📍 <strong>${gps.lat.toFixed(6)}, ${gps.lng.toFixed(6)}</strong><br>Akurasi ±${Math.round(gps.accuracy)} m · ${fmtTime(gps.timestamp)}`;
       socket?.emit('gps:update', { lat: gps.lat, lng: gps.lng, accuracy: gps.accuracy });
-    }, (err) => { gpsBox.textContent = `Location error: ${err.message}`; }, { enableHighAccuracy: true, timeout: 10000 });
+    }, (err) => { gpsBox.textContent = `Lokasi error: ${err.message}`; }, { enableHighAccuracy: true, timeout: 10000 });
   }
   root.querySelector('#refresh-gps').addEventListener('click', captureGps);
   captureGps();
-  const gpsInterval = setInterval(captureGps, 30000); // auto-refresh every 30s
+  const gpsInterval = setInterval(captureGps, 30000);
 
   // ── Photo ──
   let photoBlob = null;
@@ -130,83 +126,96 @@ export function renderReport(root, { state, api, socket }) {
   root.querySelector('#f-photo').addEventListener('change', async (e) => {
     const file = e.target.files[0];
     if (!file) return;
-    const meta = root.querySelector('#photo-meta');
-    meta.textContent = 'Compressing…';
+    root.querySelector('#photo-meta').textContent = 'Mengompres…';
     photoBlob = await compressImage(file, { maxBytes: 200 * 1024 });
-    const url = URL.createObjectURL(photoBlob);
     const img = root.querySelector('#photo-preview');
-    img.src = url; img.classList.remove('hidden');
-    meta.textContent = `Ready · ${(photoBlob.size / 1024).toFixed(0)} KB (compressed)`;
+    img.src = URL.createObjectURL(photoBlob); img.classList.remove('hidden');
+    root.querySelector('#photo-meta').textContent = `Siap · ${(photoBlob.size / 1024).toFixed(0)} KB`;
   });
 
-  // ── Existing report (edit mode) ──
-  let existing = null;
-  const banner = root.querySelector('#status-banner');
-  const submitBtn = root.querySelector('#submit-btn');
-
-  api.get(`/reports/mine/${drill.id}`).then((rep) => {
-    if (!rep) return;
-    existing = rep;
-    fillForm(rep);
-    banner.innerHTML = `<div class="banner success">✓ Already Submitted at ${fmtTime(rep.submittedAt)}.
-      ${rep.lastUpdatedAt !== rep.submittedAt ? `Last edited ${fmtTime(rep.lastUpdatedAt)} by ${escapeHtml(rep.editorName || '')}.` : ''}
-      You can edit and save changes below.</div>`;
-    submitBtn.textContent = 'Save Changes';
-  });
-
-  function fillForm(r) {
-    root.querySelector('#f-empid').value = r.employeeId || '';
-    root.querySelector('#f-team').value = r.teamName || '';
-    if (r.assemblyPointId) assemblySel.value = r.assemblyPointId;
-    assignedEl.value = r.assigned; presentEl.value = r.present; recalc();
-    condEl.value = r.condition; condWrap.classList.toggle('hidden', r.condition === 'All Safe');
-    root.querySelector('#f-condnotes').value = r.conditionNotes || '';
-    root.querySelector('#f-missingnames').value = r.missingStudents || '';
-    root.querySelector('#f-injurednames').value = r.injuredStudents || '';
-    root.querySelector('#f-observations').value = r.observations || '';
-    if (r.photoUrl) root.querySelector('#photo-meta').innerHTML = `Existing photo on file. <a href="${escapeHtml(r.photoUrl)}" target="_blank">view</a>`;
+  // ── My submissions list ──
+  async function loadMine() {
+    try {
+      const mine = await api.get(`/reports/mine/${drill.id}`);
+      const classes = [...new Set(mine.map((r) => r.className))];
+      root.querySelector('#mine-count').textContent = `${mine.length} laporan`;
+      // class datalist for quick entry
+      api.get(`/reports/reconcile/${drill.id}`).then((rec) => {
+        root.querySelector('#class-list').innerHTML = rec.map((c) => `<option value="${escapeHtml(c.className)}">`).join('');
+      }).catch(() => {});
+      root.querySelector('#mine-list').innerHTML = mine.length ? mine.map((r) => `
+        <div class="list-row">
+          <div><strong>${escapeHtml(r.className)}</strong> · ${escapeHtml(r.assemblyPoint)} ·
+            <span class="tag">${r.role === 'PENGHUNI' ? 'Penemu' : 'Wali'}</span>
+            ${r.headcount} orang${r.role === 'WALI_KELAS' ? ` / hadir ${r.rosterToday}` : ''}
+            <div class="muted">${fmtTime(r.submittedAt)}</div></div>
+          <button class="btn btn-sm btn-ghost" data-edit="${r.id}">Ubah</button>
+        </div>`).join('') : '<p class="muted">Belum ada laporan.</p>';
+      root.querySelectorAll('[data-edit]').forEach((b) => b.addEventListener('click', () => startEdit(mine.find((r) => r.id === b.dataset.edit))));
+    } catch { /* ignore */ }
   }
 
-  // ── Submit / Save ──
+  let editingId = null;
+  function startEdit(r) {
+    if (!r) return;
+    editingId = r.id;
+    roleEl.value = r.role; applyRole();
+    classEl.value = r.className; apEl.value = r.assemblyPoint;
+    rosterEl.value = r.rosterToday; headcountEl.value = r.headcount; waliEl.value = r.waliName || '';
+    notesEl.value = r.notes || '';
+    submitBtn.textContent = 'Simpan Perubahan';
+    banner.innerHTML = `<div class="banner info">Mengubah laporan ${escapeHtml(r.className)} · ${escapeHtml(r.assemblyPoint)}.</div>`;
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function resetForm(keepRole = true) {
+    editingId = null;
+    if (!keepRole) roleEl.value = 'WALI_KELAS';
+    classEl.value = ''; apEl.selectedIndex = 0; rosterEl.value = 0; headcountEl.value = 0;
+    notesEl.value = ''; photoBlob = null;
+    root.querySelector('#photo-preview').classList.add('hidden');
+    root.querySelector('#photo-meta').textContent = '';
+    submitBtn.textContent = 'Kirim Laporan';
+    applyRole();
+  }
+
+  // ── Submit ──
   root.querySelector('#report-form').addEventListener('submit', async (e) => {
     e.preventDefault();
-    if (!existing && !photoBlob) { toast('Please add a team photo before submitting.', 'warn'); return; }
+    if (!classEl.value.trim()) { toast('Kelas / Tim wajib diisi.', 'warn'); return; }
+    if (!apEl.value) { toast('Pilih Lokasi Assembly.', 'warn'); return; }
     submitBtn.disabled = true;
 
     const fields = {
       drillId: drill.id,
-      employeeId: root.querySelector('#f-empid').value,
-      teamName: root.querySelector('#f-team').value,
-      assemblyPointId: assemblySel.value,
+      role: roleEl.value,
+      className: classEl.value.trim(),
+      assemblyPoint: apEl.value,
+      rosterToday: rosterEl.value,
+      headcount: headcountEl.value,
+      waliName: waliEl.value,
+      notes: notesEl.value,
       lat: gps.lat ?? '', lng: gps.lng ?? '', accuracy: gps.accuracy ?? '', gpsTimestamp: gps.timestamp ?? '',
-      assigned: assignedEl.value, present: presentEl.value,
-      condition: condEl.value,
-      conditionNotes: root.querySelector('#f-condnotes').value,
-      missingStudents: root.querySelector('#f-missingnames').value,
-      injuredStudents: root.querySelector('#f-injurednames').value,
-      observations: root.querySelector('#f-observations').value,
     };
-
     const form = new FormData();
     Object.entries(fields).forEach(([k, v]) => form.append(k, v));
     if (photoBlob) form.append('photo', photoBlob, 'team.jpg');
 
-    const method = existing ? 'PUT' : 'POST';
-    const path = existing ? `/reports/${existing.id}` : '/reports';
+    const method = editingId ? 'PUT' : 'POST';
+    const path = editingId ? `/reports/${editingId}` : '/reports';
 
     if (!navigator.onLine) {
       await queueReport({ method, path, fields, photoBlob });
-      submitBtn.disabled = false;
-      banner.innerHTML = '<div class="banner warn">Saved offline. Will sync automatically when connection returns.</div>';
+      banner.innerHTML = '<div class="banner warn">Disimpan offline. Akan dikirim otomatis saat online.</div>';
+      resetForm(); submitBtn.disabled = false; loadMine();
       return;
     }
-
     try {
-      const saved = existing ? await api.putForm(path, form) : await api.postForm(path, form);
-      existing = saved;
-      submitBtn.textContent = 'Save Changes';
-      banner.innerHTML = `<div class="banner success">✓ ${method === 'POST' ? 'Submitted' : 'Saved'} successfully.</div>`;
-      toast('Report saved.', 'success');
+      if (editingId) await api.putForm(path, form); else await api.postForm(path, form);
+      banner.innerHTML = `<div class="banner success">✓ ${editingId ? 'Perubahan disimpan' : 'Laporan terkirim'}.</div>`;
+      toast('Laporan tersimpan.', 'success');
+      resetForm();
+      loadMine();
     } catch (err) {
       banner.innerHTML = `<div class="banner warn">${escapeHtml(err.message)}</div>`;
       toast(err.message, 'error');
@@ -215,5 +224,9 @@ export function renderReport(root, { state, api, socket }) {
     }
   });
 
-  return () => clearInterval(gpsInterval);
+  loadMine();
+  const onReport = () => loadMine();
+  socket?.on('report:update', onReport);
+
+  return () => { clearInterval(gpsInterval); socket?.off('report:update', onReport); };
 }

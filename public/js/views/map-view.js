@@ -43,10 +43,9 @@ export function renderMap(root, { state, api, socket }) {
   })();
 
   function plot(r) {
-    const status = r.condition === 'Serious Injuries' || r.condition === 'Medical Assistance Required' || (r.missing || 0) > 0
-      ? 'red' : r.condition === 'Minor Injuries' ? 'yellow' : 'green';
-    map.upsertTeam({ userId: r.teacherId, name: `${r.teamName} (${r.teacherName})`, lat: r.lat, lng: r.lng, status,
-      detail: `${r.condition} · Present ${r.present}/${r.assigned}` });
+    if (r.lat == null || r.lng == null) return;
+    map.upsertTeam({ userId: r.id, name: `${r.className} (${r.headcount})`, lat: r.lat, lng: r.lng, status: 'green',
+      detail: `${r.assemblyPoint} · ${r.headcount} orang · ${r.role === 'PENGHUNI' ? 'Penemu' : 'Wali'}` });
   }
 
   const onReport = (r) => ready && plot(r);

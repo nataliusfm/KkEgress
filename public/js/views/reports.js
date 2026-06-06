@@ -1,24 +1,24 @@
 // Reports & exports: per-drill summary, PDF report, Excel export, audit trail.
-import { el, escapeHtml, fmtTime, toast, conditionPill } from '../util.js';
+import { el, escapeHtml, fmtTime, toast } from '../util.js';
 
 export function renderReports(root, { api, state }) {
   root.appendChild(el(`
     <div>
       <div class="card">
-        <div class="section-head"><h2>Drill Reports &amp; Exports</h2></div>
-        <div class="field"><label>Select Drill</label><select id="r-drill"></select></div>
+        <div class="section-head"><h2>Laporan &amp; Ekspor</h2></div>
+        <div class="field"><label>Pilih Latihan</label><select id="r-drill"></select></div>
         <div id="r-summary"></div>
-        <div class="field"><label>Coordinator Comments (included in PDF)</label>
+        <div class="field"><label>Catatan Koordinator (disertakan di PDF)</label>
           <textarea id="r-comments" rows="2"></textarea></div>
         <div class="row-actions">
-          <button class="btn btn-primary" id="r-pdf">⬇ PDF Report</button>
-          <button class="btn btn-ghost" id="r-excel">⬇ Excel Export</button>
-          <button class="btn btn-ghost" id="r-excel-all">⬇ Export All Data</button>
+          <button class="btn btn-primary" id="r-pdf">⬇ Laporan PDF</button>
+          <button class="btn btn-ghost" id="r-excel">⬇ Ekspor Excel</button>
+          <button class="btn btn-ghost" id="r-excel-all">⬇ Ekspor Semua Data</button>
         </div>
       </div>
-      <div class="card"><div class="section-head"><h2>Team Reports</h2></div>
+      <div class="card"><div class="section-head"><h2>Penghitungan per Kelas</h2></div>
         <div class="table-wrap"><table>
-          <thead><tr><th>Team</th><th>Teacher</th><th>Present</th><th>Missing</th><th>Condition</th><th>Submitted</th><th>Photo</th></tr></thead>
+          <thead><tr><th>GRP</th><th>Wali Kelas</th><th>Tercatat</th><th>Hadir</th><th>Selisih</th><th>Status</th></tr></thead>
           <tbody id="r-rows"></tbody></table></div></div>
       <div class="card" data-role="audit"><div class="section-head"><h2>Audit Trail</h2></div>
         <div class="table-wrap"><table><thead><tr><th>Time</th><th>User</th><th>Action</th></tr></thead>
@@ -40,23 +40,24 @@ export function renderReports(root, { api, state }) {
     const id = drillSel.value;
     if (!id) return;
     try {
-      const [reports, stats] = await Promise.all([
-        api.get(`/reports/drill/${id}`),
+      const [rec, stats] = await Promise.all([
+        api.get(`/reports/reconcile/${id}`),
         api.get(`/drills/${id}/stats`),
       ]);
       root.querySelector('#r-summary').innerHTML = `
         <div class="stat-grid" style="margin:.5rem 0">
-          <div class="stat green"><div class="num">${stats.evacuated}</div><div class="lbl">Evacuated</div></div>
-          <div class="stat ${stats.missing?'red':'green'}"><div class="num">${stats.missing}</div><div class="lbl">Missing</div></div>
-          <div class="stat ${stats.injured?'yellow':''}"><div class="num">${stats.injured}</div><div class="lbl">Injured</div></div>
-          <div class="stat"><div class="num">${stats.completionPct}%</div><div class="lbl">Complete</div></div>
+          <div class="stat green"><div class="num">${stats.totalCounted}</div><div class="lbl">Tercatat</div></div>
+          <div class="stat ${stats.missing?'red':'green'}"><div class="num">${stats.missing}</div><div class="lbl">Kurang</div></div>
+          <div class="stat ${stats.classesShort?'red':'green'}"><div class="num">${stats.classesComplete}/${stats.classesReported}</div><div class="lbl">Kelas Lengkap</div></div>
+          <div class="stat"><div class="num">${stats.accountedPct}%</div><div class="lbl">Tercatat</div></div>
         </div>`;
-      root.querySelector('#r-rows').innerHTML = reports.map((r) => `<tr>
-        <td>${escapeHtml(r.teamName)}</td><td>${escapeHtml(r.teacherName)}</td>
-        <td>${r.present}/${r.assigned}</td><td>${r.missing}</td>
-        <td>${conditionPill(r.condition)}</td><td>${fmtTime(r.submittedAt)}</td>
-        <td>${r.photoUrl ? `<a href="${escapeHtml(r.photoUrl)}" target="_blank">view</a>` : '—'}</td>
-      </tr>`).join('') || '<tr><td colspan="7" class="muted">No reports.</td></tr>';
+      const pill = { LENGKAP: 'green', LEBIH: 'yellow', KURANG: 'red', MENUNGGU: 'gray' };
+      root.querySelector('#r-rows').innerHTML = rec.map((c) => `<tr>
+        <td><strong>${escapeHtml(c.className)}</strong></td><td>${escapeHtml(c.waliName || '—')}</td>
+        <td>${c.counted}</td><td>${c.hasRoster ? c.roster : '—'}</td>
+        <td>${c.diff > 0 ? '+' : ''}${c.hasRoster ? c.diff : '—'}</td>
+        <td><span class="pill ${pill[c.status] || 'gray'}">${c.status}</span></td>
+      </tr>`).join('') || '<tr><td colspan="6" class="muted">Belum ada laporan.</td></tr>';
     } catch (e) { toast(e.message, 'error'); }
   }
 

@@ -2,8 +2,8 @@ import { Router } from 'express';
 import multer from 'multer';
 import { ROLES } from '../config.js';
 import { db, now } from '../store.js';
-import { requireAuth, requireRole, audit } from '../middleware.js';
-import { computeStats } from '../services/stats.js';
+import { requireAuth, audit } from '../middleware.js';
+import { computeStats, classReconciliation } from '../services/stats.js';
 import { notify, NOTIFY_ROLES } from '../services/notifications.js';
 import {
   appendReportRow,
@@ -20,16 +20,9 @@ const upload = multer({
 const router = Router();
 router.use(requireAuth);
 
-/** Parse numeric attendance fields and derive the canonical missing count. */
-function attendance(body) {
-  const assigned = Math.max(Number(body.assigned) || 0, 0);
-  const present = Math.min(Math.max(Number(body.present) || 0, 0), assigned);
-  return { assigned, present, missing: assigned - present };
-}
+const ROLE_VALUES = ['WALI_KELAS', 'PENGHUNI']; // SAYA: wali kelas/team leader, or found occupants
 
-const CONDITIONS = ['All Safe', 'Minor Injuries', 'Serious Injuries', 'Medical Assistance Required'];
-
-/** Push a fresh report row to Google Sheets + upload photo to Drive/Photos. */
+/** Upload photo to Drive/Photos then append the report row to Google Sheets. */
 async function syncToGoogle(report, drill, photo) {
   if (photo?.buffer) {
     const [drive, photos] = await Promise.all([
@@ -38,78 +31,81 @@ async function syncToGoogle(report, drill, photo) {
     ]);
     const url = drive?.webViewLink || photos?.url || report.photoUrl || '';
     if (url || drive || photos) {
-      db.updateReport(report.id, {
-        photoUrl: url,
-        photoDriveId: drive?.fileId || '',
-        photosUrl: photos?.url || '',
-      });
+      db.updateReport(report.id, { photoUrl: url, photoDriveId: drive?.fileId || '', photosUrl: photos?.url || '' });
       report = db.findReport(report.id);
     }
   }
   await appendReportRow(report, drill);
 }
 
+/** Normalise the submitted report fields from the form body. */
+function parseReport(body, user) {
+  const role = ROLE_VALUES.includes(body.role) ? body.role : 'WALI_KELAS';
+  const headcount = Math.max(Number(body.headcount) || 0, 0);
+  const rosterToday = role === 'WALI_KELAS' ? Math.max(Number(body.rosterToday) || 0, 0) : 0;
+  return {
+    role,
+    className: (body.className || '').trim(),
+    assemblyPoint: (body.assemblyPoint || '').trim(),
+    headcount,
+    rosterToday,
+    waliName: role === 'WALI_KELAS' ? (body.waliName || user.name || '').trim() : '',
+    notes: (body.notes || '').trim(),
+    lat: body.lat ? Number(body.lat) : null,
+    lng: body.lng ? Number(body.lng) : null,
+    accuracy: body.accuracy ? Number(body.accuracy) : null,
+    geoAddress: body.geoAddress || '',
+    gpsTimestamp: body.gpsTimestamp || now(),
+  };
+}
+
 // ─────────────── List / read ───────────────
 
-/** Reports for a drill (coordinators/admins see all; teachers see their own). */
+/** Reports for a drill (teachers see only their own submissions). */
 router.get('/drill/:drillId', (req, res) => {
   let reports = db.reportsForDrill(req.params.drillId);
-  if (req.user.role === ROLES.TEACHER) {
-    reports = reports.filter((r) => r.teacherId === req.user.id);
-  }
+  if (req.user.role === ROLES.TEACHER) reports = reports.filter((r) => r.reporterId === req.user.id);
   res.json(reports);
 });
 
-/** The current user's report for a drill (used to decide submit vs edit). */
+/** Per-class reconciliation (LENGKAP / KURANG / LEBIH) for a drill. */
+router.get('/reconcile/:drillId', (req, res) => {
+  res.json(classReconciliation(req.params.drillId));
+});
+
+/** All of the current user's submissions for a drill (they may file several). */
 router.get('/mine/:drillId', (req, res) => {
-  res.json(db.findReportByTeacher(req.params.drillId, req.user.id) || null);
+  res.json(db.reportsForDrill(req.params.drillId).filter((r) => r.reporterId === req.user.id));
 });
 
 router.get('/:id', (req, res) => {
   const r = db.findReport(req.params.id);
   if (!r) return res.status(404).json({ error: 'Report not found.' });
-  if (req.user.role === ROLES.TEACHER && r.teacherId !== req.user.id) {
+  if (req.user.role === ROLES.TEACHER && r.reporterId !== req.user.id) {
     return res.status(403).json({ error: 'Not your report.' });
   }
   res.json(r);
 });
 
-// ─────────────── Submit (one per teacher per drill) ───────────────
+// ─────────────── Submit (multiple allowed — one per class/assembly point) ───────────────
 
 router.post('/', upload.single('photo'), async (req, res) => {
   const drill = db.findDrill(req.body.drillId);
   if (!drill) return res.status(404).json({ error: 'Drill not found.' });
   if (drill.status !== 'Active') {
-    return res.status(409).json({ error: 'Reports can only be submitted while the drill is Active.' });
+    return res.status(409).json({ error: 'Laporan hanya dapat dikirim saat latihan berstatus Aktif.' });
   }
 
-  // Duplicate prevention: one report per teacher per drill.
-  if (db.findReportByTeacher(drill.id, req.user.id)) {
-    return res.status(409).json({ error: 'You have already submitted a report for this drill. Edit it instead.' });
-  }
-
-  const condition = CONDITIONS.includes(req.body.condition) ? req.body.condition : 'All Safe';
-  const { assigned, present, missing } = attendance(req.body);
-  const ap = db.assemblyPoints().find((a) => a.id === (req.body.assemblyPointId || req.user.assemblyPointId));
+  const f = parseReport(req.body, req.user);
+  if (!f.className) return res.status(400).json({ error: 'Kelas / Tim wajib diisi.' });
+  if (!f.assemblyPoint) return res.status(400).json({ error: 'Lokasi Assembly wajib dipilih.' });
 
   const report = db.addReport({
     drillId: drill.id,
-    teacherId: req.user.id,
-    teacherName: req.user.name,
-    employeeId: req.user.employeeId || req.body.employeeId || '',
-    teamName: req.user.teamName || req.body.teamName || '',
-    assemblyPointId: ap?.id || '',
-    assemblyPointName: ap?.name || req.body.assemblyPointName || '',
-    lat: req.body.lat ? Number(req.body.lat) : null,
-    lng: req.body.lng ? Number(req.body.lng) : null,
-    accuracy: req.body.accuracy ? Number(req.body.accuracy) : null,
-    gpsTimestamp: req.body.gpsTimestamp || now(),
-    assigned, present, missing,
-    condition,
-    conditionNotes: condition === 'All Safe' ? '' : (req.body.conditionNotes || ''),
-    missingStudents: req.body.missingStudents || '',
-    injuredStudents: req.body.injuredStudents || '',
-    observations: req.body.observations || '',
+    reporterId: req.user.id,
+    reporterName: req.user.name,
+    reporterEmail: req.user.email,
+    ...f,
     photoUrl: '',
     submittedAt: now(),
     lastUpdatedAt: now(),
@@ -117,89 +113,60 @@ router.post('/', upload.single('photo'), async (req, res) => {
     revisions: [],
   });
 
-  audit(req, 'SUBMIT_REPORT', { drillId: drill.id, reportId: report.id });
+  audit(req, 'SUBMIT_REPORT', { drillId: drill.id, reportId: report.id, class: f.className });
   emitToAll('report:update', report);
   emitToAll('stats:update', computeStats(drill));
 
-  // Notifications for noteworthy conditions.
-  await notify('REPORT_SUBMITTED', `${report.teamName} (${report.teacherName}) reported in.`, {
+  const roleLabel = f.role === 'WALI_KELAS' ? 'Wali Kelas' : 'Penemu';
+  await notify('REPORT_SUBMITTED', `${roleLabel} melaporkan ${f.className} di ${f.assemblyPoint} (${f.headcount} orang).`, {
     severity: 'info', drillId: drill.id, emailRoles: [],
   });
-  if (missing > 0) {
-    await notify('MISSING_REPORTED', `${missing} missing in ${report.teamName} (${report.teacherName}).`, {
+
+  // After aggregation, alert coordinators if this class is now short (KURANG).
+  const cls = classReconciliation(drill.id).find((c) => c.className === f.className);
+  if (cls && cls.status === 'KURANG') {
+    await notify('MISSING_REPORTED', `Kelas ${f.className} KURANG ${Math.abs(cls.diff)} (tercatat ${cls.counted} dari ${cls.roster}).`, {
       severity: 'critical', drillId: drill.id, emailRoles: NOTIFY_ROLES.COORDINATORS,
     });
   }
-  if (condition !== 'All Safe') {
-    await notify('INJURY_REPORTED', `${report.teamName}: ${condition}.`, {
-      severity: 'warning', drillId: drill.id, emailRoles: NOTIFY_ROLES.COORDINATORS,
-    });
-  }
 
-  // Fire-and-forget Google sync so the teacher gets an instant response.
   syncToGoogle(report, drill, req.file).catch((e) => console.error('google sync:', e.message));
-
   res.status(201).json(report);
 });
 
-// ─────────────── Edit (with revision history) ───────────────
+// ─────────────── Edit (author or admin; keeps revision history) ───────────────
 
 router.put('/:id', upload.single('photo'), async (req, res) => {
   const report = db.findReport(req.params.id);
   if (!report) return res.status(404).json({ error: 'Report not found.' });
 
-  const isOwner = report.teacherId === req.user.id;
+  const isOwner = report.reporterId === req.user.id;
   const isAdmin = req.user.role === ROLES.SUPER_ADMIN;
   if (!isOwner && !isAdmin) {
-    return res.status(403).json({ error: 'Only the author or a super administrator can edit this report.' });
+    return res.status(403).json({ error: 'Hanya pembuat atau administrator yang dapat mengubah laporan ini.' });
   }
-
   const drill = db.findDrill(report.drillId);
 
-  // Snapshot current state into revision history before mutating.
   const revision = {
-    editedAt: now(),
-    editorName: req.user.name,
-    editorId: req.user.id,
+    editedAt: now(), editorName: req.user.name, editorId: req.user.id,
     snapshot: {
-      assigned: report.assigned, present: report.present, missing: report.missing,
-      condition: report.condition, conditionNotes: report.conditionNotes,
-      missingStudents: report.missingStudents, injuredStudents: report.injuredStudents,
-      observations: report.observations,
-      lat: report.lat, lng: report.lng,
+      role: report.role, className: report.className, assemblyPoint: report.assemblyPoint,
+      headcount: report.headcount, rosterToday: report.rosterToday, waliName: report.waliName,
+      notes: report.notes, lat: report.lat, lng: report.lng,
     },
   };
 
-  const condition = CONDITIONS.includes(req.body.condition) ? req.body.condition : report.condition;
-  const { assigned, present, missing } = attendance({
-    assigned: req.body.assigned ?? report.assigned,
-    present: req.body.present ?? report.present,
-  });
-
-  const patch = {
-    assigned, present, missing, condition,
-    conditionNotes: condition === 'All Safe' ? '' : (req.body.conditionNotes ?? report.conditionNotes),
-    missingStudents: req.body.missingStudents ?? report.missingStudents,
-    injuredStudents: req.body.injuredStudents ?? report.injuredStudents,
-    observations: req.body.observations ?? report.observations,
-    lat: req.body.lat ? Number(req.body.lat) : report.lat,
-    lng: req.body.lng ? Number(req.body.lng) : report.lng,
-    accuracy: req.body.accuracy ? Number(req.body.accuracy) : report.accuracy,
+  const f = parseReport({ ...report, ...req.body }, req.user);
+  const updated = db.updateReport(report.id, {
+    ...f,
     lastUpdatedAt: now(),
     editorName: req.user.name,
     revisions: [...(report.revisions || []), revision],
-  };
+  });
 
-  const updated = db.updateReport(report.id, patch);
   audit(req, 'EDIT_REPORT', { reportId: report.id, editor: req.user.email });
   emitToAll('report:update', updated);
   if (drill) emitToAll('stats:update', computeStats(drill));
-
-  if (missing > 0) {
-    await notify('MISSING_REPORTED', `${missing} missing in ${updated.teamName} (updated).`, {
-      severity: 'critical', drillId: updated.drillId, emailRoles: NOTIFY_ROLES.COORDINATORS,
-    });
-  }
 
   syncToGoogle(updated, drill, req.file).catch((e) => console.error('google sync:', e.message));
   res.json(updated);

@@ -1,57 +1,63 @@
 import PDFDocument from 'pdfkit';
 import ExcelJS from 'exceljs';
 import { db } from '../store.js';
-import { computeStats } from './stats.js';
+import { computeStats, classReconciliation } from './stats.js';
 
-const SHEET_COLUMNS = [
-  { header: 'Drill ID', key: 'drillId', width: 38 },
-  { header: 'Drill Name', key: 'drillName', width: 20 },
-  { header: 'Date', key: 'date', width: 14 },
-  { header: 'Teacher Name', key: 'teacherName', width: 20 },
-  { header: 'Employee ID', key: 'employeeId', width: 14 },
-  { header: 'Team/Class', key: 'teamName', width: 16 },
-  { header: 'Assembly Point', key: 'assemblyPointName', width: 18 },
+const SAYA = (role) => (role === 'PENGHUNI' ? 'MENEMUKAN PENGHUNI' : 'WALI KELAS ATAU TEAM LEADER');
+
+const REPORT_COLUMNS = [
+  { header: 'Timestamp', key: 'submittedAt', width: 22 },
+  { header: 'Email', key: 'reporterEmail', width: 24 },
+  { header: 'SAYA', key: 'saya', width: 26 },
+  { header: 'Kelas/Tim', key: 'className', width: 12 },
+  { header: 'Lokasi Assembly', key: 'assemblyPoint', width: 18 },
+  { header: 'Jumlah Hadir Hari Ini', key: 'rosterToday', width: 18 },
+  { header: 'Jumlah Bersama Saya', key: 'headcount', width: 18 },
+  { header: 'Nama Wali Kelas', key: 'waliName', width: 18 },
+  { header: 'Catatan', key: 'notes', width: 28 },
   { header: 'Latitude', key: 'lat', width: 12 },
   { header: 'Longitude', key: 'lng', width: 12 },
-  { header: 'Assigned', key: 'assigned', width: 10 },
-  { header: 'Present', key: 'present', width: 10 },
-  { header: 'Missing', key: 'missing', width: 10 },
-  { header: 'Condition', key: 'condition', width: 20 },
-  { header: 'Notes', key: 'conditionNotes', width: 30 },
-  { header: 'Photo URL', key: 'photoUrl', width: 30 },
-  { header: 'Submission Timestamp', key: 'submittedAt', width: 24 },
-  { header: 'Last Update Timestamp', key: 'lastUpdatedAt', width: 24 },
+  { header: 'GeoAddress', key: 'geoAddress', width: 30 },
+  { header: 'Photo URL', key: 'photoUrl', width: 28 },
 ];
 
-/** Generate an .xlsx workbook of a drill's reports. Returns a Buffer. */
+/** Generate an .xlsx workbook: raw responses + per-class reconciliation. */
 export async function buildExcel(drillId) {
   const drill = db.findDrill(drillId);
   const reports = drillId ? db.reportsForDrill(drillId) : db.reports();
 
   const wb = new ExcelJS.Workbook();
-  wb.creator = 'School Emergency Drill System';
-  const ws = wb.addWorksheet('Drill Records');
-  ws.columns = SHEET_COLUMNS;
-  ws.getRow(1).font = { bold: true };
+  wb.creator = 'Kuala Kencana Drill';
 
-  for (const r of reports) {
-    ws.addRow({
-      ...r,
-      drillName: drill?.name || '',
-      date: drill?.date || '',
-    });
+  const ws = wb.addWorksheet('Response Evakuasi');
+  ws.columns = REPORT_COLUMNS;
+  ws.getRow(1).font = { bold: true };
+  for (const r of reports) ws.addRow({ ...r, saya: SAYA(r.role) });
+
+  if (drillId) {
+    const rec = wb.addWorksheet('Penghitungan');
+    rec.columns = [
+      { header: 'GRP', key: 'className', width: 12 },
+      { header: 'Wali Kelas', key: 'waliName', width: 18 },
+      { header: 'Tercatat', key: 'counted', width: 12 },
+      { header: 'Hadir Hari Ini', key: 'roster', width: 14 },
+      { header: 'Selisih', key: 'diff', width: 10 },
+      { header: 'Status', key: 'status', width: 12 },
+    ];
+    rec.getRow(1).font = { bold: true };
+    for (const c of classReconciliation(drillId)) rec.addRow(c);
   }
   return Buffer.from(await wb.xlsx.writeBuffer());
 }
 
-/** Generate a PDF summary report for a drill. Returns a Promise<Buffer>. */
+/** Generate a PDF summary for a drill. Returns a Promise<Buffer>. */
 export function buildPdf(drillId, { mapSnapshot, coordinatorComments } = {}) {
   return new Promise((resolve, reject) => {
     const drill = db.findDrill(drillId);
     if (!drill) return reject(new Error('Drill not found'));
-    const reports = db.reportsForDrill(drillId);
     const school = db.getSchool();
     const stats = computeStats(drill);
+    const classes = classReconciliation(drillId);
 
     const doc = new PDFDocument({ margin: 50, size: 'A4' });
     const chunks = [];
@@ -59,77 +65,46 @@ export function buildPdf(drillId, { mapSnapshot, coordinatorComments } = {}) {
     doc.on('end', () => resolve(Buffer.concat(chunks)));
     doc.on('error', reject);
 
-    const h = (t) => doc.moveDown(0.6).fontSize(14).fillColor('#1a3c6e').text(t).fillColor('#000').fontSize(10).moveDown(0.2);
+    const h = (t) => doc.moveDown(0.6).fontSize(13).fillColor('#1a3c6e').text(t).fillColor('#000').fontSize(10).moveDown(0.2);
 
-    // Title
-    doc.fontSize(20).fillColor('#1a3c6e').text('Emergency Drill Report', { align: 'center' });
+    doc.fontSize(19).fillColor('#1a3c6e').text('Laporan Latihan Evakuasi', { align: 'center' });
     doc.moveDown(0.2).fontSize(11).fillColor('#555').text(school.name, { align: 'center' });
     if (school.address) doc.fontSize(9).text(school.address, { align: 'center' });
     doc.fillColor('#000').moveDown();
 
-    // Drill details
-    h('Drill Details');
-    doc.text(`Name: ${drill.name}`);
-    doc.text(`Type: ${drill.typeName || drill.type}`);
-    doc.text(`Date: ${drill.date}    Start Time: ${drill.startTime || '-'}`);
+    h('Detail Latihan');
+    doc.text(`Nama: ${drill.name}`);
+    doc.text(`Jenis: ${drill.typeName || drill.type}`);
+    doc.text(`Tanggal: ${drill.date}    Mulai: ${drill.startTime || '-'}`);
     doc.text(`Status: ${drill.status}`);
-    doc.text(`Coordinator: ${drill.coordinatorName || '-'}`);
-    if (drill.notes) doc.text(`Notes: ${drill.notes}`);
 
-    // Attendance summary
-    h('Attendance Summary');
-    doc.text(`Teams reported: ${stats.teamsReported} / ${stats.totalTeams}`);
-    doc.text(`Total assigned: ${stats.totalAssigned}`);
-    doc.text(`Present (evacuated): ${stats.evacuated}`);
-    doc.text(`Missing: ${stats.missing}`);
-    doc.text(`Safe: ${stats.safe}    Injured: ${stats.injured}`);
-    doc.text(`Drill completion: ${stats.completionPct}%`);
+    h('Ringkasan');
+    doc.text(`Total hadir hari ini (roster): ${stats.totalRoster}`);
+    doc.text(`Total tercatat (terevakuasi): ${stats.totalCounted}`);
+    doc.text(`Kurang: ${stats.missing}    Lebih: ${stats.excess}`);
+    doc.text(`Kelas melapor: ${stats.classesReported}  |  Lengkap: ${stats.classesComplete}  |  Kurang: ${stats.classesShort}`);
+    doc.text(`Tercatat: ${stats.accountedPct}% dari roster`);
 
-    // Missing persons
-    const missingNames = reports.flatMap((r) =>
-      (r.missingStudents || '').split(/[\n,]+/).map((s) => s.trim()).filter(Boolean)
-    );
-    h('Missing Persons');
-    doc.text(missingNames.length ? missingNames.join(', ') : 'None reported.');
-
-    // Injuries
-    const injured = reports.filter((r) => r.condition && r.condition !== 'All Safe');
-    h('Injury / Condition Reports');
-    if (injured.length === 0) doc.text('No injuries reported.');
-    injured.forEach((r) => {
-      doc.text(`• ${r.teamName} (${r.teacherName}): ${r.condition}` +
-        (r.conditionNotes ? ` — ${r.conditionNotes}` : ''));
+    h('Penghitungan per Kelas');
+    doc.font('Helvetica-Bold').text('GRP    Wali        Tercatat / Hadir    Status');
+    doc.font('Helvetica');
+    classes.forEach((c) => {
+      doc.text(`${c.className}    ${c.waliName || '-'}    ${c.counted} / ${c.roster}    ${c.status}` +
+        (c.diff ? ` (${c.diff > 0 ? '+' : ''}${c.diff})` : ''));
     });
 
-    // Per-team table
-    h('Team Reports');
-    reports.forEach((r) => {
-      doc.font('Helvetica-Bold').text(`${r.teamName} — ${r.teacherName}`);
-      doc.font('Helvetica').text(
-        `Assembly: ${r.assemblyPointName || '-'} | Assigned ${r.assigned}, ` +
-        `Present ${r.present}, Missing ${r.missing} | ${r.condition} | ` +
-        `GPS ${r.lat ?? '-'}, ${r.lng ?? '-'} | Submitted ${r.submittedAt || '-'}`
-      );
-      doc.moveDown(0.3);
-    });
+    const short = classes.filter((c) => c.status === 'KURANG');
+    h('Kelas Kurang (Perlu Tindakan)');
+    if (!short.length) doc.text('Tidak ada — semua kelas lengkap.');
+    short.forEach((c) => doc.text(`• ${c.className}: kurang ${Math.abs(c.diff)} (tercatat ${c.counted} dari ${c.roster})`));
 
-    // Map snapshot (data URL) if provided
     if (mapSnapshot && mapSnapshot.startsWith('data:image')) {
-      try {
-        h('Map Snapshot');
-        const b64 = mapSnapshot.split(',')[1];
-        doc.image(Buffer.from(b64, 'base64'), { fit: [500, 300], align: 'center' });
-      } catch { /* ignore bad image */ }
+      try { h('Peta'); doc.image(Buffer.from(mapSnapshot.split(',')[1], 'base64'), { fit: [500, 300], align: 'center' }); }
+      catch { /* ignore */ }
     }
+    if (coordinatorComments) { h('Catatan Koordinator'); doc.text(coordinatorComments); }
 
-    if (coordinatorComments) {
-      h('Coordinator Comments');
-      doc.text(coordinatorComments);
-    }
-
-    doc.moveDown().fontSize(8).fillColor('#999')
-      .text(`Generated ${new Date().toLocaleString()}`, { align: 'right' });
-
+    doc.moveDown().fontSize(8).fillColor('#999').text(`Dibuat ${new Date().toLocaleString()}`, { align: 'right' });
     doc.end();
   });
 }

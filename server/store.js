@@ -25,7 +25,11 @@ const EMPTY = () => ({
     logoUrl: '',
   },
   users: [],
-  assemblyPoints: [],
+  assemblyPoints: [
+    { id: 'ap1', name: 'Assembly Point 1', location: { lat: -4.0, lng: 136.881 }, capacity: 0 },
+    { id: 'ap2', name: 'Assembly Point 2', location: { lat: -4.001, lng: 136.879 }, capacity: 0 },
+    { id: 'ap3', name: 'Assembly Point 3', location: { lat: -3.999, lng: 136.882 }, capacity: 0 },
+  ],
   drillTypes: [
     { id: 'fire', name: 'Fire Drill', builtin: true },
     { id: 'earthquake', name: 'Earthquake Drill', builtin: true },
