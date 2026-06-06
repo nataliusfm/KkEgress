@@ -26,7 +26,11 @@
   let activeBranch = cfg.branches[0]?.id || 'all';
 
   // ── Branding ──
-  if (cfg.org.name) $('org-name').textContent = cfg.org.name;
+  if (cfg.org.name) {
+    const safe = esc(cfg.org.name);
+    const i = safe.lastIndexOf(' ');
+    $('org-name').innerHTML = i > 0 ? `${safe.slice(0, i)}<br>${safe.slice(i + 1)}` : safe;
+  }
   if (cfg.org.tagline) { $('org-tagline').textContent = cfg.org.tagline; $('topbar-title').textContent = cfg.org.tagline; }
   if (cfg.org.short) { $('org-short').textContent = cfg.org.short; $('avatar').textContent = cfg.org.short.charAt(0).toUpperCase(); }
   // Logo: configured URL → built-in /img/logo.png → emoji fallback.
