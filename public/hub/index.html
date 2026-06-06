@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#0d1623" />
+  <title>School Hub</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/hub/hub.css" />
+</head>
+<body>
+  <div class="app">
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidenav">
+      <div class="sidebar-brand">
+        <div class="brand-crest" id="brand-crest">🏫</div>
+        <div class="brand-meta">
+          <div class="brand-name" id="org-name">School Hub</div>
+          <div class="brand-sub" id="org-tagline">Operations Hub</div>
+        </div>
+      </div>
+
+      <nav class="sidebar-nav">
+        <p class="nav-section" data-i18n="sec.branches">BRANCHES</p>
+        <div id="branch-list"></div>
+      </nav>
+
+      <button class="cta-btn" id="cta-action"><span>＋</span><span data-i18n="cta.request">Request an app</span></button>
+
+      <div class="sidebar-block">
+        <p class="nav-section" data-i18n="sec.language">LANGUAGE</p>
+        <div class="lang-toggle">
+          <button data-lang="en" class="active">EN</button>
+          <button data-lang="id">ID</button>
+        </div>
+      </div>
+
+      <div class="sidebar-footer">
+        <p class="nav-section" data-i18n="sec.poweredBy">POWERED BY</p>
+        <div class="signed-name" id="org-short">YPJ</div>
+        <div class="signed-role">Unified School Hub</div>
+      </div>
+    </aside>
+    <div class="scrim" id="scrim"></div>
+
+    <!-- Main column -->
+    <div class="main-col">
+      <header class="topbar">
+        <button class="icon-btn nav-toggle" id="nav-toggle" aria-label="Menu">☰</button>
+        <span class="topbar-title" id="topbar-title">School Operations Hub</span>
+        <div class="topbar-right">
+          <div class="lang-toggle compact">
+            <button data-lang="en" class="active">EN</button>
+            <button data-lang="id">ID</button>
+          </div>
+          <div class="avatar" id="avatar">H</div>
+        </div>
+      </header>
+
+      <main class="content">
+        <header class="page-head">
+          <p class="eyebrow" id="page-eyebrow">PORTAL</p>
+          <h1 class="page-title" id="page-title">Applications</h1>
+          <p class="page-desc" id="page-desc"></p>
+        </header>
+        <div class="app-grid" id="app-grid"></div>
+      </main>
+    </div>
+  </div>
+
+  <script src="/hub/config.js"></script>
+  <script src="/hub/hub.js"></script>
+</body>
+</html>
