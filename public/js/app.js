@@ -1,5 +1,5 @@
 import { api, auth } from './api.js';
-import { toast, timeAgo, escapeHtml } from './util.js';
+import { el, toast, timeAgo, escapeHtml } from './util.js';
 import { configureMaps } from './map.js';
 import { syncPending, pendingCount } from './offline.js';
 
@@ -21,15 +21,61 @@ export const state = {
 };
 
 const ROUTES = {
-  dashboard: { title: 'Dashboard', render: renderDashboard },
-  map: { title: 'Live Map', render: renderMap },
-  report: { title: 'My Report', render: renderReport, roles: ['TEACHER'] },
-  monitor: { title: 'Team Monitor', render: renderMonitor, roles: ['COORDINATOR', 'SUPER_ADMIN'] },
-  drills: { title: 'Drills', render: renderDrills, roles: ['SUPER_ADMIN'] },
-  reports: { title: 'Reports', render: renderReports, roles: ['COORDINATOR', 'SUPER_ADMIN'] },
-  admin: { title: 'Administration', render: renderAdmin, roles: ['SUPER_ADMIN'] },
+  dashboard: { render: renderDashboard },
+  map: { render: renderMap },
+  report: { render: renderReport, roles: ['TEACHER'] },
+  monitor: { render: renderMonitor, roles: ['COORDINATOR', 'SUPER_ADMIN'] },
+  drills: { render: renderDrills, roles: ['SUPER_ADMIN'] },
+  reports: { render: renderReports, roles: ['COORDINATOR', 'SUPER_ADMIN'] },
+  admin: { render: renderAdmin, roles: ['SUPER_ADMIN'] },
 };
 
+// ───────── Internationalisation (shell) ─────────
+const I18N = {
+  en: {
+    'nav.dashboard': 'Dashboard', 'nav.map': 'Live Map', 'nav.report': 'My Report',
+    'nav.monitor': 'Team Monitor', 'nav.drills': 'Drills', 'nav.reports': 'Reports', 'nav.admin': 'Administration',
+    'sec.navigation': 'NAVIGATION', 'sec.language': 'LANGUAGE', 'sec.signedInAs': 'SIGNED IN AS',
+    'action.signout': 'Sign out', 'login.signin': 'Sign In', 'login.email': 'Email address', 'login.password': 'Password',
+    'cta.drills': 'Start Drill', 'cta.monitor': 'Open Monitor', 'cta.report': 'Submit Report',
+    'eyebrow.dashboard': 'OVERVIEW', 'title.dashboard': 'Drill dashboard',
+    'eyebrow.map': 'TRACKING', 'title.map': 'Live map',
+    'eyebrow.report': 'FIELD REPORT', 'title.report': 'My report',
+    'eyebrow.monitor': 'REAL-TIME', 'title.monitor': 'Team monitor',
+    'eyebrow.drills': 'MANAGEMENT', 'title.drills': 'Emergency drills',
+    'eyebrow.reports': 'RECORDS', 'title.reports': 'Reports & exports',
+    'eyebrow.admin': 'SETTINGS', 'title.admin': 'Administration',
+  },
+  id: {
+    'nav.dashboard': 'Dasbor', 'nav.map': 'Peta Langsung', 'nav.report': 'Laporan Saya',
+    'nav.monitor': 'Pemantauan Tim', 'nav.drills': 'Latihan', 'nav.reports': 'Laporan', 'nav.admin': 'Administrasi',
+    'sec.navigation': 'NAVIGASI', 'sec.language': 'BAHASA', 'sec.signedInAs': 'MASUK SEBAGAI',
+    'action.signout': 'Keluar', 'login.signin': 'Masuk', 'login.email': 'Alamat email', 'login.password': 'Kata sandi',
+    'cta.drills': 'Mulai Latihan', 'cta.monitor': 'Buka Pemantauan', 'cta.report': 'Kirim Laporan',
+    'eyebrow.dashboard': 'IKHTISAR', 'title.dashboard': 'Dasbor latihan',
+    'eyebrow.map': 'PELACAKAN', 'title.map': 'Peta langsung',
+    'eyebrow.report': 'LAPORAN LAPANGAN', 'title.report': 'Laporan saya',
+    'eyebrow.monitor': 'WAKTU NYATA', 'title.monitor': 'Pemantauan tim',
+    'eyebrow.drills': 'MANAJEMEN', 'title.drills': 'Latihan darurat',
+    'eyebrow.reports': 'CATATAN', 'title.reports': 'Laporan & ekspor',
+    'eyebrow.admin': 'PENGATURAN', 'title.admin': 'Administrasi',
+  },
+};
+let currentLang = localStorage.getItem('sedts.lang') || 'en';
+const t = (key) => (I18N[currentLang] && I18N[currentLang][key]) || I18N.en[key] || key;
+
+function applyLanguage(lang) {
+  currentLang = I18N[lang] ? lang : 'en';
+  localStorage.setItem('sedts.lang', currentLang);
+  document.documentElement.lang = currentLang;
+  document.querySelectorAll('[data-i18n]').forEach((node) => { node.textContent = t(node.dataset.i18n); });
+  document.querySelectorAll('[data-i18n-ph]').forEach((node) => { node.placeholder = t(node.dataset.i18nPh); });
+  document.querySelectorAll('.lang-toggle [data-lang]').forEach((b) => b.classList.toggle('active', b.dataset.lang === currentLang));
+  updateCta();
+  refreshPageHead();
+}
+
+let currentRoute = null;
 let currentCleanup = null;
 
 // ───────── Boot ─────────
@@ -48,6 +94,7 @@ async function init() {
   setupLogin();
   setupChrome();
   bindConnectivity();
+  applyLanguage(currentLang);
 
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('/sw.js').catch(() => {});
@@ -127,19 +174,55 @@ async function onAuthenticated(user) {
   document.getElementById('login-view').classList.add('hidden');
   document.getElementById('app-view').classList.remove('hidden');
 
-  // User chip
+  // Signed-in footer
   document.getElementById('user-name').textContent = user.name;
   document.getElementById('user-role').textContent = roleLabel(user.role);
+
+  // Avatar: photo if available, otherwise initial
   const avatar = document.getElementById('user-avatar');
-  if (user.picture) avatar.src = user.picture; else avatar.style.display = 'none';
+  const initialEl = document.getElementById('avatar-initial');
+  const initial = (user.name || user.email || '?').trim().charAt(0).toUpperCase();
+  initialEl.textContent = initial;
+  if (user.picture) { avatar.src = user.picture; avatar.style.display = 'block'; initialEl.style.display = 'none'; }
+  else { avatar.style.display = 'none'; initialEl.style.display = 'block'; }
+
+  document.getElementById('sidebar-school-name').textContent = state.config.schoolName || 'School';
 
   applyRoleVisibility();
+  updateCta();
+  applyLanguage(currentLang);
   connectSocket();
+  await loadBrand();
   await loadActiveDrill();
   await loadNotifications();
   syncPending();
 
   navigate(defaultRoute());
+}
+
+/** Sets the gold sidebar CTA based on the user's role. */
+function updateCta() {
+  const btn = document.getElementById('cta-action');
+  if (!btn || !state.user) return;
+  const map = {
+    SUPER_ADMIN: { key: 'cta.drills', route: 'drills', icon: '🔥' },
+    COORDINATOR: { key: 'cta.monitor', route: 'monitor', icon: '📡' },
+    TEACHER: { key: 'cta.report', route: 'report', icon: '📝' },
+  };
+  const c = map[state.user.role] || map.TEACHER;
+  btn.innerHTML = `<span>${c.icon}</span><span>${escapeHtml(t(c.key))}</span>`;
+  btn.onclick = () => { navigate(c.route); closeNav(); };
+}
+
+/** Loads school branding (name + logo) for the sidebar crest. */
+async function loadBrand() {
+  try {
+    const school = await api.get('/admin/school');
+    if (school?.name) document.getElementById('sidebar-school-name').textContent = school.name;
+    if (school?.logoUrl) {
+      document.getElementById('brand-crest').innerHTML = `<img src="${escapeHtml(school.logoUrl)}" alt="">`;
+    }
+  } catch { /* ignore */ }
 }
 
 window.addEventListener('auth:expired', () => {
@@ -169,10 +252,14 @@ function applyRoleVisibility() {
 }
 
 // ───────── App chrome (nav, notifications) ─────────
+function closeNav() {
+  document.getElementById('sidenav')?.classList.remove('open');
+  document.getElementById('scrim')?.classList.remove('show');
+}
+
 function setupChrome() {
   const sidenav = document.getElementById('sidenav');
   const scrim = document.getElementById('scrim');
-  const closeNav = () => { sidenav.classList.remove('open'); scrim.classList.remove('show'); };
 
   document.getElementById('nav-toggle').addEventListener('click', () => {
     sidenav.classList.toggle('open'); scrim.classList.toggle('show');
@@ -181,6 +268,11 @@ function setupChrome() {
 
   document.querySelectorAll('.nav-item').forEach((item) => {
     item.addEventListener('click', () => { navigate(item.dataset.route); closeNav(); });
+  });
+
+  // Language toggles (sidebar + topbar share the same handler)
+  document.querySelectorAll('.lang-toggle [data-lang]').forEach((b) => {
+    b.addEventListener('click', () => applyLanguage(b.dataset.lang));
   });
 
   document.getElementById('logout-btn').addEventListener('click', logout);
@@ -205,14 +297,28 @@ export function navigate(route) {
   const def = ROUTES[route];
   if (!def) return;
   if (def.roles && !def.roles.includes(state.user.role)) return navigate(defaultRoute());
+  currentRoute = route;
 
   document.querySelectorAll('.nav-item').forEach((n) => n.classList.toggle('active', n.dataset.route === route));
-  document.getElementById('topbar-title').textContent = def.title;
 
   if (typeof currentCleanup === 'function') { currentCleanup(); currentCleanup = null; }
   const content = document.getElementById('content');
   content.innerHTML = '';
+  content.appendChild(el(
+    `<header class="page-head"><p class="eyebrow">${escapeHtml(t('eyebrow.' + route))}</p>` +
+    `<h1 class="page-title">${escapeHtml(t('title.' + route))}</h1></header>`
+  ));
+  content.scrollTop = 0;
   currentCleanup = def.render(content, ctx()) || null;
+}
+
+/** Re-translates the current page header in place (on language switch). */
+function refreshPageHead() {
+  if (!currentRoute) return;
+  const eb = document.querySelector('.page-head .eyebrow');
+  const ti = document.querySelector('.page-head .page-title');
+  if (eb) eb.textContent = t('eyebrow.' + currentRoute);
+  if (ti) ti.textContent = t('title.' + currentRoute);
 }
 
 /** Context passed to every view. */

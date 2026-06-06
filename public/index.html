@@ -3,9 +3,12 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <meta name="theme-color" content="#1a3c6e" />
-  <title>School Emergency Drill Tracking</title>
+  <meta name="theme-color" content="#0d1623" />
+  <title>School Emergency Drill System</title>
   <link rel="manifest" href="/manifest.webmanifest" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/css/styles.css" />
 </head>
 <body>
@@ -15,13 +18,12 @@
       <div class="brand">
         <span class="brand-icon">🚨</span>
         <h1 id="login-school-name">School Emergency Drill</h1>
-        <p>Tracking &amp; Reporting System</p>
+        <p class="brand-tag">Tracking &amp; Reporting System</p>
       </div>
-      <!-- Password login (always shown) -->
       <form id="pw-login-form">
-        <div class="field"><input id="pw-email" type="email" placeholder="Email address" autocomplete="email" required /></div>
-        <div class="field"><input id="pw-password" type="password" placeholder="Password" autocomplete="current-password" required /></div>
-        <button class="btn btn-primary btn-block" type="submit">Sign In</button>
+        <div class="field"><input id="pw-email" type="email" data-i18n-ph="login.email" placeholder="Email address" autocomplete="email" required /></div>
+        <div class="field"><input id="pw-password" type="password" data-i18n-ph="login.password" placeholder="Password" autocomplete="current-password" required /></div>
+        <button class="btn btn-primary btn-block" type="submit" data-i18n="login.signin">Sign In</button>
       </form>
       <div id="login-divider" class="login-divider hidden"><span>or</span></div>
       <div id="google-signin"></div>
@@ -32,41 +34,72 @@
         <button id="dev-login-btn" class="btn btn-ghost btn-block">Dev Sign in</button>
       </div>
       <p id="login-error" class="error-text"></p>
-      <p class="offline-banner hidden" id="login-offline">⚠ You are offline</p>
     </div>
   </section>
 
   <!-- ───────── App ───────── -->
   <div id="app-view" class="app hidden">
-    <header class="topbar">
-      <button class="icon-btn" id="nav-toggle" aria-label="Menu">☰</button>
-      <span class="topbar-title" id="topbar-title">Dashboard</span>
-      <div class="topbar-right">
-        <span id="connection-dot" class="conn-dot" title="Realtime status"></span>
-        <button class="icon-btn" id="notif-btn" aria-label="Notifications">🔔<span id="notif-count" class="badge hidden">0</span></button>
-        <div class="user-chip">
-          <img id="user-avatar" alt="" />
-          <div>
-            <div id="user-name" class="user-name"></div>
-            <div id="user-role" class="user-role"></div>
-          </div>
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidenav">
+      <div class="sidebar-brand">
+        <div class="brand-crest" id="brand-crest">🚨</div>
+        <div class="brand-meta">
+          <div class="brand-name" id="sidebar-school-name">School</div>
+          <div class="brand-sub">Emergency Drill System</div>
         </div>
-        <button class="icon-btn" id="logout-btn" aria-label="Sign out">⎋</button>
       </div>
-    </header>
 
-    <nav class="sidenav" id="sidenav">
-      <a data-route="dashboard" class="nav-item active">📊 Dashboard</a>
-      <a data-route="map" class="nav-item">🗺️ Live Map</a>
-      <a data-route="report" class="nav-item" data-role="TEACHER">📝 My Report</a>
-      <a data-route="monitor" class="nav-item" data-role="COORDINATOR,SUPER_ADMIN">📡 Team Monitor</a>
-      <a data-route="drills" class="nav-item" data-role="SUPER_ADMIN">🔥 Drills</a>
-      <a data-route="reports" class="nav-item" data-role="COORDINATOR,SUPER_ADMIN">📄 Reports</a>
-      <a data-route="admin" class="nav-item" data-role="SUPER_ADMIN">⚙️ Administration</a>
-    </nav>
+      <nav class="sidebar-nav">
+        <p class="nav-section" data-i18n="sec.navigation">NAVIGATION</p>
+        <a data-route="dashboard" class="nav-item active"><span class="nav-ico">▤</span><span data-i18n="nav.dashboard">Dashboard</span></a>
+        <a data-route="map" class="nav-item"><span class="nav-ico">◎</span><span data-i18n="nav.map">Live Map</span></a>
+        <a data-route="report" class="nav-item" data-role="TEACHER"><span class="nav-ico">✎</span><span data-i18n="nav.report">My Report</span></a>
+        <a data-route="monitor" class="nav-item" data-role="COORDINATOR,SUPER_ADMIN"><span class="nav-ico">◫</span><span data-i18n="nav.monitor">Team Monitor</span></a>
+        <a data-route="drills" class="nav-item" data-role="SUPER_ADMIN"><span class="nav-ico">▲</span><span data-i18n="nav.drills">Drills</span></a>
+        <a data-route="reports" class="nav-item" data-role="COORDINATOR,SUPER_ADMIN"><span class="nav-ico">▦</span><span data-i18n="nav.reports">Reports</span></a>
+        <a data-route="admin" class="nav-item" data-role="SUPER_ADMIN"><span class="nav-ico">⚙</span><span data-i18n="nav.admin">Administration</span></a>
+      </nav>
+
+      <button class="cta-btn" id="cta-action"></button>
+
+      <div class="sidebar-block">
+        <p class="nav-section" data-i18n="sec.language">LANGUAGE</p>
+        <div class="lang-toggle">
+          <button data-lang="en" class="active">EN</button>
+          <button data-lang="id">ID</button>
+        </div>
+      </div>
+
+      <div class="sidebar-footer">
+        <p class="nav-section" data-i18n="sec.signedInAs">SIGNED IN AS</p>
+        <div class="signed-name" id="user-name"></div>
+        <div class="signed-role" id="user-role"></div>
+        <button class="signout-btn" id="logout-btn"><span>⎋</span><span data-i18n="action.signout">Sign out</span></button>
+      </div>
+    </aside>
     <div class="scrim" id="scrim"></div>
 
-    <main class="content" id="content"><!-- routed views injected here --></main>
+    <!-- Main column -->
+    <div class="main-col">
+      <header class="topbar">
+        <button class="icon-btn nav-toggle" id="nav-toggle" aria-label="Menu">☰</button>
+        <span class="topbar-title" id="topbar-title">Emergency Drill System</span>
+        <div class="topbar-right">
+          <span id="connection-dot" class="conn-dot" title="Realtime status"></span>
+          <div class="lang-toggle compact">
+            <button data-lang="en" class="active">EN</button>
+            <button data-lang="id">ID</button>
+          </div>
+          <button class="icon-btn" id="notif-btn" aria-label="Notifications">🔔<span id="notif-count" class="badge hidden">0</span></button>
+          <div class="avatar" id="user-avatar-box">
+            <img id="user-avatar" alt="" />
+            <span id="avatar-initial"></span>
+          </div>
+        </div>
+      </header>
+
+      <main class="content" id="content"><!-- routed views injected here --></main>
+    </div>
 
     <!-- Notification drawer -->
     <aside class="notif-drawer hidden" id="notif-drawer">
