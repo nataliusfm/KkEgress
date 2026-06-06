@@ -1,0 +1,39 @@
+# Render Blueprint — deploys the app as a free web service.
+# Render reads this automatically when you create a "Blueprint" from the repo.
+# Docs: https://render.com/docs/blueprint-spec
+services:
+  - type: web
+    name: school-emergency-drill
+    runtime: node
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /api/health
+    autoDeploy: true
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - key: NODE_ENV
+        value: production
+      # A strong session secret is generated for you on first deploy.
+      - key: JWT_SECRET
+        generateValue: true
+      # Lets you sign in immediately without Google credentials (demo mode).
+      # Set to "false" and configure GOOGLE_CLIENT_ID once you wire real auth.
+      - key: ALLOW_DEV_LOGIN
+        value: "true"
+      # The first account to sign in with this email becomes Super Administrator.
+      - key: BOOTSTRAP_SUPER_ADMIN
+        value: admin@school.edu
+      # Restrict sign-in to these email domains (comma-separated).
+      - key: ALLOWED_EMAIL_DOMAINS
+        value: school.edu
+      # ── Optional: fill these in Render's dashboard to enable Google APIs ──
+      # - key: GOOGLE_CLIENT_ID
+      #   sync: false
+      # - key: GOOGLE_MAPS_API_KEY
+      #   sync: false
+      # - key: GOOGLE_SHEETS_SPREADSHEET_ID
+      #   sync: false
+      # - key: GOOGLE_DRIVE_ROOT_FOLDER_ID
+      #   sync: false
