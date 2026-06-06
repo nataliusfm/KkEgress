@@ -1,5 +1,6 @@
 import { api, auth } from './api.js';
 import { el, toast, timeAgo, escapeHtml } from './util.js';
+import { t, setLang, getLang } from './i18n.js';
 import { configureMaps } from './map.js';
 import { syncPending, pendingCount } from './offline.js';
 
@@ -30,49 +31,16 @@ const ROUTES = {
   admin: { render: renderAdmin, roles: ['SUPER_ADMIN'] },
 };
 
-// ───────── Internationalisation (shell) ─────────
-const I18N = {
-  en: {
-    'nav.dashboard': 'Dashboard', 'nav.map': 'Live Map', 'nav.report': 'My Report',
-    'nav.monitor': 'Team Monitor', 'nav.drills': 'Drills', 'nav.reports': 'Reports', 'nav.admin': 'Administration',
-    'sec.navigation': 'NAVIGATION', 'sec.language': 'LANGUAGE', 'sec.signedInAs': 'SIGNED IN AS',
-    'action.signout': 'Sign out', 'login.signin': 'Sign In', 'login.email': 'Email address', 'login.password': 'Password',
-    'cta.drills': 'Start Drill', 'cta.monitor': 'Open Monitor', 'cta.report': 'Submit Report',
-    'eyebrow.dashboard': 'OVERVIEW', 'title.dashboard': 'Drill dashboard',
-    'eyebrow.map': 'TRACKING', 'title.map': 'Live map',
-    'eyebrow.report': 'FIELD REPORT', 'title.report': 'My report',
-    'eyebrow.monitor': 'REAL-TIME', 'title.monitor': 'Team monitor',
-    'eyebrow.drills': 'MANAGEMENT', 'title.drills': 'Emergency drills',
-    'eyebrow.reports': 'RECORDS', 'title.reports': 'Reports & exports',
-    'eyebrow.admin': 'SETTINGS', 'title.admin': 'Administration',
-  },
-  id: {
-    'nav.dashboard': 'Dasbor', 'nav.map': 'Peta Langsung', 'nav.report': 'Laporan Saya',
-    'nav.monitor': 'Pemantauan Tim', 'nav.drills': 'Latihan', 'nav.reports': 'Laporan', 'nav.admin': 'Administrasi',
-    'sec.navigation': 'NAVIGASI', 'sec.language': 'BAHASA', 'sec.signedInAs': 'MASUK SEBAGAI',
-    'action.signout': 'Keluar', 'login.signin': 'Masuk', 'login.email': 'Alamat email', 'login.password': 'Kata sandi',
-    'cta.drills': 'Mulai Latihan', 'cta.monitor': 'Buka Pemantauan', 'cta.report': 'Kirim Laporan',
-    'eyebrow.dashboard': 'IKHTISAR', 'title.dashboard': 'Dasbor latihan',
-    'eyebrow.map': 'PELACAKAN', 'title.map': 'Peta langsung',
-    'eyebrow.report': 'LAPORAN LAPANGAN', 'title.report': 'Laporan saya',
-    'eyebrow.monitor': 'WAKTU NYATA', 'title.monitor': 'Pemantauan tim',
-    'eyebrow.drills': 'MANAJEMEN', 'title.drills': 'Latihan darurat',
-    'eyebrow.reports': 'CATATAN', 'title.reports': 'Laporan & ekspor',
-    'eyebrow.admin': 'PENGATURAN', 'title.admin': 'Administrasi',
-  },
-};
-let currentLang = localStorage.getItem('sedts.lang') || 'en';
-const t = (key) => (I18N[currentLang] && I18N[currentLang][key]) || I18N.en[key] || key;
-
+// ───────── Internationalisation (shared EN/ID) ─────────
 function applyLanguage(lang) {
-  currentLang = I18N[lang] ? lang : 'en';
-  localStorage.setItem('sedts.lang', currentLang);
-  document.documentElement.lang = currentLang;
+  setLang(lang);
+  const cur = getLang();
   document.querySelectorAll('[data-i18n]').forEach((node) => { node.textContent = t(node.dataset.i18n); });
   document.querySelectorAll('[data-i18n-ph]').forEach((node) => { node.placeholder = t(node.dataset.i18nPh); });
-  document.querySelectorAll('.lang-toggle [data-lang]').forEach((b) => b.classList.toggle('active', b.dataset.lang === currentLang));
+  document.querySelectorAll('.lang-toggle [data-lang]').forEach((b) => b.classList.toggle('active', b.dataset.lang === cur));
   updateCta();
   refreshPageHead();
+  if (state.user && currentRoute) navigate(currentRoute); // re-render active view in the new language
 }
 
 let currentRoute = null;
@@ -95,7 +63,7 @@ async function init() {
   setupLogin();
   setupChrome();
   bindConnectivity();
-  applyLanguage(currentLang);
+  applyLanguage(getLang());
 
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('/sw.js').catch(() => {});
@@ -226,7 +194,7 @@ async function onAuthenticated(user) {
 
   applyRoleVisibility();
   updateCta();
-  applyLanguage(currentLang);
+  applyLanguage(getLang());
   connectSocket();
   await loadBrand();
   await loadActiveDrill();

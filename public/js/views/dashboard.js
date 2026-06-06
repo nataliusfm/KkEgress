@@ -1,5 +1,6 @@
 // Dashboard: live evacuation statistics (roster vs counted) + live map.
 import { el, escapeHtml } from '../util.js';
+import { t } from '../i18n.js';
 import { LiveMap } from '../map.js';
 
 export function renderDashboard(root, { state, api, socket }) {
@@ -7,21 +8,21 @@ export function renderDashboard(root, { state, api, socket }) {
   root.appendChild(el(`
     <div>
       <div class="card" id="drill-banner"></div>
-      <div class="section-head"><h2>Statistik Langsung</h2><span class="muted" id="stat-updated"></span></div>
+      <div class="section-head"><h2>${t('dash.stats')}</h2><span class="muted" id="stat-updated"></span></div>
       <div class="stat-grid" id="stat-grid"></div>
       <div class="card" style="margin-top:1rem">
-        <h2>Tercatat vs Roster</h2>
+        <h2>${t('dash.countVsRoster')}</h2>
         <div class="progress"><span id="completion-bar" style="width:0%"></span></div>
         <p class="muted" id="completion-label" style="margin:.5rem 0 0">—</p>
       </div>
       <div class="card">
-        <div class="section-head"><h2>Peta Langsung</h2></div>
+        <div class="section-head"><h2>${t('dash.map')}</h2></div>
         <div id="map"></div>
         <div class="map-legend">
-          <span><i class="legend-dot" style="background:#15803d"></i>Lengkap</span>
-          <span><i class="legend-dot" style="background:#d8392b"></i>Kurang</span>
-          <span><i class="legend-dot" style="background:#1f4ea3"></i>Assembly point</span>
-          <span><i class="legend-dot" style="background:#0d1623"></i>Sekolah</span>
+          <span><i class="legend-dot" style="background:#15803d"></i>${t('dash.legendComplete')}</span>
+          <span><i class="legend-dot" style="background:#d8392b"></i>${t('dash.legendShort')}</span>
+          <span><i class="legend-dot" style="background:#1f4ea3"></i>${t('dash.legendAp')}</span>
+          <span><i class="legend-dot" style="background:#0d1623"></i>${t('dash.legendSchool')}</span>
         </div>
       </div>
     </div>`));
@@ -31,27 +32,29 @@ export function renderDashboard(root, { state, api, socket }) {
     banner.innerHTML = `<strong>${escapeHtml(drill.name)}</strong> · ${escapeHtml(drill.typeName || drill.type)}
       · <span class="pill ${drill.status === 'Active' ? 'green' : 'gray'}">${escapeHtml(drill.status)}</span>`;
   } else {
-    banner.innerHTML = '<span class="muted">Tidak ada latihan aktif. Statistik muncul saat latihan dimulai.</span>';
+    banner.innerHTML = `<span class="muted">${t('dash.noDrill')}</span>`;
   }
 
   const grid = root.querySelector('#stat-grid');
   function paintStats(s) {
     const cards = [
-      ['Total Hadir (Roster)', s.totalRoster, ''],
-      ['Tercatat (Evakuasi)', s.totalCounted, 'green'],
-      ['Kurang', s.missing, s.missing ? 'red' : 'green'],
-      ['Lebih', s.excess, s.excess ? 'yellow' : ''],
-      ['Kelas Melapor', s.classesReported, ''],
-      ['Kelas Lengkap', s.classesComplete, 'green'],
-      ['Kelas Kurang', s.classesShort, s.classesShort ? 'red' : 'green'],
-      ['Laporan Masuk', s.reportsCount, ''],
+      [t('dash.totalRoster'), s.totalRoster, ''],
+      [t('dash.counted'), s.totalCounted, 'green'],
+      [t('dash.short'), s.missing, s.missing ? 'red' : 'green'],
+      [t('dash.over'), s.excess, s.excess ? 'yellow' : ''],
+      [t('dash.classesReported'), s.classesReported, ''],
+      [t('dash.classesComplete'), s.classesComplete, 'green'],
+      [t('dash.classesShort'), s.classesShort, s.classesShort ? 'red' : 'green'],
+      [t('dash.reports'), s.reportsCount, ''],
     ];
     grid.innerHTML = cards.map(([lbl, num, cls]) =>
       `<div class="stat ${cls}"><div class="num">${num ?? 0}</div><div class="lbl">${lbl}</div></div>`).join('');
     root.querySelector('#completion-bar').style.width = `${s.accountedPct || 0}%`;
-    root.querySelector('#completion-label').textContent =
-      `${s.accountedPct || 0}% tercatat — ${s.totalCounted}/${s.totalRoster} siswa, ${s.classesComplete}/${s.classesReported} kelas lengkap`;
-    root.querySelector('#stat-updated').textContent = `diperbarui ${new Date().toLocaleTimeString()}`;
+    root.querySelector('#completion-label').textContent = t('dash.progress', {
+      pct: s.accountedPct || 0, counted: s.totalCounted, roster: s.totalRoster,
+      complete: s.classesComplete, reported: s.classesReported,
+    });
+    root.querySelector('#stat-updated').textContent = t('dash.updated', { time: new Date().toLocaleTimeString() });
   }
 
   async function loadStats() {
