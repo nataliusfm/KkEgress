@@ -31,17 +31,32 @@ Uses the included `render.yaml` blueprint.
 
 ---
 
-## Option B — Railway (free trial credit)
+## Option B — Railway (no blueprint needed)
 
-Uses the included `Procfile` (auto-detected).
+Railway auto-detects Node.js and uses the included `Procfile` + `railway.json`
+(build command, start command, and health check are configured for you). You
+only need to add the environment variables by hand.
 
-1. Go to **https://railway.app** → sign in with GitHub.
-2. **New Project** → **Deploy from GitHub repo** → pick `nataliusfm/kkegress`.
-3. After it builds, open **Variables** and add:
+1. Go to **https://railway.app** → **Login** with GitHub.
+2. Tap **New Project** → **Deploy from GitHub repo** → pick
+   **`nataliusfm/kkegress`**.
+3. If asked for a branch, choose
+   **`claude/school-emergency-drill-system-2jtee`** (or `main` once merged).
+   Railway starts building immediately (you'll see the logs).
+4. Open the service → **Variables** tab → **+ New Variable**, and add these
+   three (tap "Add" after each):
    - `ALLOW_DEV_LOGIN` = `true`
    - `BOOTSTRAP_SUPER_ADMIN` = `admin@school.edu`
-   - `JWT_SECRET` = (any long random string)
-4. Open **Settings → Networking → Generate Domain** to get a public URL.
+   - `JWT_SECRET` = any long random string (e.g. mash the keyboard)
+   - *(optional)* `ALLOWED_EMAIL_DOMAINS` = `school.edu`
+   Saving variables triggers a redeploy automatically.
+5. Open **Settings → Networking → Generate Domain**. Railway gives you a public
+   URL like `https://kkegress-production.up.railway.app`.
+6. Open that URL, tap the dev login, enter `admin@school.edu` → you're in as
+   Super Administrator.
+
+> Railway's free trial gives you credit to run this; no sleep/wake delay like
+> Render's free tier. The app reads Railway's injected `PORT` automatically.
 
 ---
 
