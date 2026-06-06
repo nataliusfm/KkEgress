@@ -4,7 +4,11 @@ import crypto from 'crypto';
 import { fileURLToPath } from 'url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const DATA_DIR = path.join(__dirname, '..', 'data');
+// DATA_DIR lets the store write to a persistent volume (e.g. a Railway Volume
+// mounted at /data) so data survives redeploys. Defaults to ./data locally.
+const DATA_DIR = process.env.DATA_DIR
+  ? path.resolve(process.env.DATA_DIR)
+  : path.join(__dirname, '..', 'data');
 const DATA_FILE = path.join(DATA_DIR, 'db.json');
 
 /**
@@ -54,12 +58,25 @@ function load() {
 let persistTimer = null;
 function persistNow() {
   fs.mkdirSync(DATA_DIR, { recursive: true });
-  fs.writeFileSync(DATA_FILE, JSON.stringify(state, null, 2));
+  // Atomic write: write to a temp file then rename, so an interrupted write
+  // (e.g. during a redeploy) can never corrupt the database file.
+  const tmp = DATA_FILE + '.tmp';
+  fs.writeFileSync(tmp, JSON.stringify(state, null, 2));
+  fs.renameSync(tmp, DATA_FILE);
 }
 function persist() {
   clearTimeout(persistTimer);
   persistTimer = setTimeout(persistNow, 50);
 }
+
+// Flush any pending write before the process exits (e.g. on a redeploy's
+// SIGTERM) so recent changes are never lost.
+function flushAndExit() {
+  try { clearTimeout(persistTimer); persistNow(); } catch { /* ignore */ }
+  process.exit(0);
+}
+process.on('SIGTERM', flushAndExit);
+process.on('SIGINT', flushAndExit);
 
 export const id = () => crypto.randomUUID();
 export const now = () => new Date().toISOString();
