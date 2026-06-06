@@ -42,14 +42,14 @@ h1, h2, h3 { font-family: var(--font-sans); font-weight: 700; letter-spacing: -0
   display: flex; flex-direction: column; padding: 1.1rem 0.9rem; gap: 0.4rem;
   border-right: 1px solid var(--sidebar-line); overflow-y: auto;
 }
-.sidebar-brand { display: flex; align-items: flex-start; gap: 0.8rem; padding: 0.3rem 0.4rem 1.2rem; border-bottom: 1px solid var(--sidebar-line); }
+.sidebar-brand { display: flex; align-items: flex-start; gap: 0.7rem; padding: 0.3rem 0.4rem 1.2rem; border-bottom: 1px solid var(--sidebar-line); }
 .brand-crest {
   width: 42px; height: 42px; border-radius: 10px; flex: 0 0 auto;
   background: linear-gradient(135deg, #1d2f47, #0f1b2c); border: 1px solid var(--sidebar-line);
   display: flex; align-items: center; justify-content: center; font-size: 1.2rem; overflow: hidden;
 }
 .brand-crest img { width: 100%; height: 100%; object-fit: cover; }
-.brand-name { color: #fff; font-weight: 700; font-size: 1rem; line-height: 1.2; }
+.brand-name { color: #fff; font-weight: 700; font-size: 0.95rem; line-height: 1.22; white-space: nowrap; letter-spacing: -0.01em; }
 .brand-sub { color: var(--sidebar-label); font-size: 0.62rem; margin-top: 0.55rem; line-height: 1.5; }
 
 .sidebar-sep { border: none; border-top: 1px solid var(--sidebar-line); margin: 0.9rem 0.2rem; }
