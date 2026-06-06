@@ -29,7 +29,15 @@
   if (cfg.org.name) $('org-name').textContent = cfg.org.name;
   if (cfg.org.tagline) { $('org-tagline').textContent = cfg.org.tagline; $('topbar-title').textContent = cfg.org.tagline; }
   if (cfg.org.short) { $('org-short').textContent = cfg.org.short; $('avatar').textContent = cfg.org.short.charAt(0).toUpperCase(); }
-  if (cfg.org.logoUrl) $('brand-crest').innerHTML = `<img src="${esc(cfg.org.logoUrl)}" alt="">`;
+  // Logo: configured URL → built-in /img/logo.png → emoji fallback.
+  (function setCrest() {
+    const node = $('brand-crest');
+    const src = cfg.org.logoUrl || '/img/logo.png';
+    const probe = new Image();
+    probe.onload = () => { node.innerHTML = `<img src="${esc(src)}" alt="">`; node.classList.add('has-logo'); };
+    probe.onerror = () => { node.textContent = '🏫'; };
+    probe.src = src;
+  })();
 
   // ── Branches ──
   function renderBranches() {

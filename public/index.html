@@ -58,13 +58,34 @@
 
       <nav class="sidebar-nav">
         <p class="nav-section" data-i18n="sec.navigation">NAVIGATION</p>
-        <a data-route="dashboard" class="nav-item active"><span class="nav-ico">▤</span><span data-i18n="nav.dashboard">Dashboard</span></a>
-        <a data-route="map" class="nav-item"><span class="nav-ico">◎</span><span data-i18n="nav.map">Live Map</span></a>
-        <a data-route="report" class="nav-item" data-role="TEACHER"><span class="nav-ico">✎</span><span data-i18n="nav.report">My Report</span></a>
-        <a data-route="monitor" class="nav-item" data-role="COORDINATOR,SUPER_ADMIN"><span class="nav-ico">◫</span><span data-i18n="nav.monitor">Team Monitor</span></a>
-        <a data-route="drills" class="nav-item" data-role="SUPER_ADMIN"><span class="nav-ico">▲</span><span data-i18n="nav.drills">Drills</span></a>
-        <a data-route="reports" class="nav-item" data-role="COORDINATOR,SUPER_ADMIN"><span class="nav-ico">▦</span><span data-i18n="nav.reports">Reports</span></a>
-        <a data-route="admin" class="nav-item" data-role="SUPER_ADMIN"><span class="nav-ico">⚙</span><span data-i18n="nav.admin">Administration</span></a>
+        <a data-route="dashboard" class="nav-item active">
+          <span class="nav-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg></span>
+          <span data-i18n="nav.dashboard">Dashboard</span>
+        </a>
+        <a data-route="map" class="nav-item">
+          <span class="nav-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s7-5.6 7-11a7 7 0 1 0-14 0c0 5.4 7 11 7 11Z"/><circle cx="12" cy="10" r="2.5"/></svg></span>
+          <span data-i18n="nav.map">Live Map</span>
+        </a>
+        <a data-route="report" class="nav-item" data-role="TEACHER">
+          <span class="nav-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4h6v3H9zM8 5H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><path d="M8 12h8M8 16h6"/></svg></span>
+          <span data-i18n="nav.report">My Report</span>
+        </a>
+        <a data-route="monitor" class="nav-item" data-role="COORDINATOR,SUPER_ADMIN">
+          <span class="nav-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/></svg></span>
+          <span data-i18n="nav.monitor">Team Monitor</span>
+        </a>
+        <a data-route="drills" class="nav-item" data-role="SUPER_ADMIN">
+          <span class="nav-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.5c.5 3-2.5 4-2.5 7.2a2.5 2.5 0 0 0 5 0c0-.8-.2-1.4.4-2.2 1.6 1.5 2.6 3.3 2.6 5.3a5.5 5.5 0 0 1-11 0c0-3.8 3.3-5.4 5.5-10.3Z"/></svg></span>
+          <span data-i18n="nav.drills">Drills</span>
+        </a>
+        <a data-route="reports" class="nav-item" data-role="COORDINATOR,SUPER_ADMIN">
+          <span class="nav-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h16"/><rect x="5" y="12" width="3.2" height="6" rx="1"/><rect x="10.4" y="8" width="3.2" height="10" rx="1"/><rect x="15.8" y="4" width="3.2" height="14" rx="1"/></svg></span>
+          <span data-i18n="nav.reports">Reports</span>
+        </a>
+        <a data-route="admin" class="nav-item" data-role="SUPER_ADMIN">
+          <span class="nav-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.6 1.6 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.6 1.6 0 0 0-1.8-.3 1.6 1.6 0 0 0-1 1.5V21a2 2 0 0 1-4 0v-.1a1.6 1.6 0 0 0-1-1.5 1.6 1.6 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.6 1.6 0 0 0 .3-1.8 1.6 1.6 0 0 0-1.5-1H3a2 2 0 0 1 0-4h.1a1.6 1.6 0 0 0 1.5-1 1.6 1.6 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.6 1.6 0 0 0 1.8.3H9a1.6 1.6 0 0 0 1-1.5V3a2 2 0 0 1 4 0v.1a1.6 1.6 0 0 0 1 1.5 1.6 1.6 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.6 1.6 0 0 0-.3 1.8V9a1.6 1.6 0 0 0 1.5 1H21a2 2 0 0 1 0 4h-.1a1.6 1.6 0 0 0-1.5 1Z"/></svg></span>
+          <span data-i18n="nav.admin">Administration</span>
+        </a>
       </nav>
 
       <button class="cta-btn" id="cta-action"></button>

@@ -60,10 +60,10 @@ h1, h2, h3 { font-family: var(--font-serif); font-weight: 500; letter-spacing: -
   transition: background .12s, color .12s; border: none; background: transparent; width: 100%; text-align: left; font-family: var(--font-sans);
 }
 .branch-item:hover { background: var(--sidebar-hover); color: #fff; }
-.branch-item.active { background: #fff; color: var(--sidebar-bg); font-weight: 600; }
+.branch-item.active { background: rgba(255, 255, 255, 0.06); color: #fff; font-weight: 600; }
 .branch-item.active::before {
   content: ''; position: absolute; left: -0.9rem; top: 50%; transform: translateY(-50%);
-  width: 3px; height: 60%; background: var(--gold); border-radius: 0 3px 3px 0;
+  width: 3px; height: 62%; background: #8ea2ff; border-radius: 0 3px 3px 0;
 }
 .brand-crest.has-logo { background: #fff; border-color: transparent; }
 .branch-ico { width: 18px; text-align: center; opacity: 0.85; }

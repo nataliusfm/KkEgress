@@ -152,12 +152,13 @@ label { font-size: 0.78rem; font-weight: 600; color: var(--text-2); display: blo
   position: relative; transition: background .12s, color .12s;
 }
 .nav-item:hover { background: var(--sidebar-hover); color: #fff; }
-.nav-ico { width: 18px; text-align: center; opacity: 0.85; font-size: 0.95rem; }
-.nav-item.active { background: #fff; color: var(--sidebar-bg); font-weight: 600; }
+.nav-ico { display: inline-flex; align-items: center; justify-content: center; width: 20px; height: 20px; flex: 0 0 auto; opacity: 0.8; }
+.nav-ico svg { width: 19px; height: 19px; }
+.nav-item.active { background: rgba(255, 255, 255, 0.06); color: #fff; font-weight: 600; }
 .nav-item.active .nav-ico { opacity: 1; }
 .nav-item.active::before {
   content: ''; position: absolute; left: -0.9rem; top: 50%; transform: translateY(-50%);
-  width: 3px; height: 60%; background: var(--gold); border-radius: 0 3px 3px 0;
+  width: 3px; height: 62%; background: #8ea2ff; border-radius: 0 3px 3px 0;
 }
 
 .cta-btn {

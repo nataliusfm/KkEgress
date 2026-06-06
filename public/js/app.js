@@ -90,10 +90,7 @@ async function init() {
   configureMaps(state.config.mapsApiKey || '');
   document.getElementById('login-school-name').textContent =
     state.config.schoolName || 'Yayasan Pendidikan Jayawijaya';
-  if (state.config.logoUrl) {
-    document.getElementById('login-crest').innerHTML = `<img src="${escapeHtml(state.config.logoUrl)}" alt="">`;
-    document.getElementById('login-crest').classList.add('has-logo');
-  }
+  setCrest('login-crest', state.config.logoUrl, '🚨');
 
   setupLogin();
   setupChrome();
@@ -179,6 +176,21 @@ function setupLogin() {
   }
 }
 
+/**
+ * Set a crest element to a logo image, trying (1) the configured logoUrl,
+ * then (2) a built-in /img/logo.png, and falling back to an emoji if neither
+ * loads. Lets us bake in a permanent logo by dropping a file at public/img/.
+ */
+function setCrest(id, url, fallback) {
+  const node = document.getElementById(id);
+  if (!node) return;
+  const src = url || '/img/logo.png';
+  const probe = new Image();
+  probe.onload = () => { node.innerHTML = `<img src="${src}" alt="">`; node.classList.add('has-logo'); };
+  probe.onerror = () => { node.textContent = fallback; node.classList.remove('has-logo'); };
+  probe.src = src;
+}
+
 function showLogin() {
   document.getElementById('login-view').classList.remove('hidden');
   document.getElementById('app-view').classList.add('hidden');
@@ -234,11 +246,7 @@ async function loadBrand() {
   try {
     const school = await api.get('/admin/school');
     if (school?.name) document.getElementById('sidebar-school-name').textContent = school.name;
-    if (school?.logoUrl) {
-      const crest = document.getElementById('brand-crest');
-      crest.innerHTML = `<img src="${escapeHtml(school.logoUrl)}" alt="">`;
-      crest.classList.add('has-logo');
-    }
+    setCrest('brand-crest', school?.logoUrl, '🚨');
   } catch { /* ignore */ }
 }
 
