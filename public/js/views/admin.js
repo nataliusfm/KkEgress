@@ -96,7 +96,16 @@ export function renderAdmin(root, { api }) {
     root.querySelector('#u-rows').innerHTML = users.map((u) => `<tr>
       <td>${escapeHtml(u.name)}</td><td>${escapeHtml(u.email)}</td>
       <td><span class="tag">${escapeHtml(u.role)}</span></td><td>${escapeHtml(u.teamName || '—')}</td>
-      <td><button class="btn btn-sm btn-danger" data-del="${u.id}">✕</button></td></tr>`).join('');
+      <td style="display:flex;gap:.3rem">
+        <button class="btn btn-sm btn-ghost" data-edit="${u.id}" data-name="${escapeHtml(u.name)}">✏️</button>
+        <button class="btn btn-sm btn-danger" data-del="${u.id}">✕</button>
+      </td></tr>`).join('');
+    root.querySelectorAll('[data-edit]').forEach((b) => b.addEventListener('click', async () => {
+      const newName = prompt('Edit name:', b.dataset.name);
+      if (!newName || newName === b.dataset.name) return;
+      try { await api.put(`/admin/users/${b.dataset.edit}`, { name: newName }); loadUsers(); toast('Name updated.', 'success'); }
+      catch (e) { toast(e.message, 'error'); }
+    }));
     root.querySelectorAll('[data-del]').forEach((b) => b.addEventListener('click', async () => {
       try { await api.del(`/admin/users/${b.dataset.del}`); loadUsers(); } catch (e) { toast(e.message, 'error'); }
     }));
