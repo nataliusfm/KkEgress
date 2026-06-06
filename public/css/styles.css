@@ -161,7 +161,7 @@ label { font-size: 0.78rem; font-weight: 600; color: var(--text-2); display: blo
 .nav-item.active { background: rgba(255, 255, 255, 0.05); color: #fff; font-weight: 400; }
 .nav-item.active .nav-ico { opacity: 1; }
 .nav-item.active::before {
-  content: ''; position: absolute; left: -0.9rem; top: 50%; transform: translateY(-50%);
+  content: ''; position: absolute; left: 0; top: 50%; transform: translateY(-50%);
   width: 3px; height: 62%; background: #8ea2ff; border-radius: 0 3px 3px 0;
 }
 
