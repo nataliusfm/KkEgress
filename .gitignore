@@ -1,0 +1,10 @@
+node_modules/
+.env
+*.log
+data/*.json
+!data/.gitkeep
+uploads/
+coverage/
+.DS_Store
+google-credentials.json
+google-service-account.json

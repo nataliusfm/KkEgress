@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#1a3c6e" />
+  <title>School Emergency Drill Tracking</title>
+  <link rel="manifest" href="/manifest.webmanifest" />
+  <link rel="stylesheet" href="/css/styles.css" />
+</head>
+<body>
+  <!-- ───────── Login ───────── -->
+  <section id="login-view" class="view login-view">
+    <div class="login-card">
+      <div class="brand">
+        <span class="brand-icon">🚨</span>
+        <h1 id="login-school-name">School Emergency Drill</h1>
+        <p>Tracking &amp; Reporting System</p>
+      </div>
+      <div id="google-signin"></div>
+      <div id="dev-login" class="dev-login hidden">
+        <p class="muted">Developer login (school email)</p>
+        <input id="dev-email" type="email" placeholder="you@school.edu" autocomplete="email" />
+        <input id="dev-name" type="text" placeholder="Your name" />
+        <button id="dev-login-btn" class="btn btn-primary">Sign in</button>
+      </div>
+      <p id="login-error" class="error-text"></p>
+      <p class="offline-banner hidden" id="login-offline">⚠ You are offline</p>
+    </div>
+  </section>
+
+  <!-- ───────── App ───────── -->
+  <div id="app-view" class="app hidden">
+    <header class="topbar">
+      <button class="icon-btn" id="nav-toggle" aria-label="Menu">☰</button>
+      <span class="topbar-title" id="topbar-title">Dashboard</span>
+      <div class="topbar-right">
+        <span id="connection-dot" class="conn-dot" title="Realtime status"></span>
+        <button class="icon-btn" id="notif-btn" aria-label="Notifications">🔔<span id="notif-count" class="badge hidden">0</span></button>
+        <div class="user-chip">
+          <img id="user-avatar" alt="" />
+          <div>
+            <div id="user-name" class="user-name"></div>
+            <div id="user-role" class="user-role"></div>
+          </div>
+        </div>
+        <button class="icon-btn" id="logout-btn" aria-label="Sign out">⎋</button>
+      </div>
+    </header>
+
+    <nav class="sidenav" id="sidenav">
+      <a data-route="dashboard" class="nav-item active">📊 Dashboard</a>
+      <a data-route="map" class="nav-item">🗺️ Live Map</a>
+      <a data-route="report" class="nav-item" data-role="TEACHER">📝 My Report</a>
+      <a data-route="monitor" class="nav-item" data-role="COORDINATOR,SUPER_ADMIN">📡 Team Monitor</a>
+      <a data-route="drills" class="nav-item" data-role="SUPER_ADMIN">🔥 Drills</a>
+      <a data-route="reports" class="nav-item" data-role="COORDINATOR,SUPER_ADMIN">📄 Reports</a>
+      <a data-route="admin" class="nav-item" data-role="SUPER_ADMIN">⚙️ Administration</a>
+    </nav>
+    <div class="scrim" id="scrim"></div>
+
+    <main class="content" id="content"><!-- routed views injected here --></main>
+
+    <!-- Notification drawer -->
+    <aside class="notif-drawer hidden" id="notif-drawer">
+      <header><h3>Notifications</h3><button class="icon-btn" id="notif-close">✕</button></header>
+      <ul id="notif-list" class="notif-list"></ul>
+    </aside>
+  </div>
+
+  <div id="toast-host" class="toast-host"></div>
+
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+  <script src="/socket.io/socket.io.js"></script>
+  <script type="module" src="/js/app.js"></script>
+</body>
+</html>
