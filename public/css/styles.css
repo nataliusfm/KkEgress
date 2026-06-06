@@ -7,11 +7,13 @@
   --sidebar-text: #9aa6b6;
   --sidebar-hover: rgba(255, 255, 255, 0.06);
 
-  /* Accents */
-  --accent: #2563eb;
-  --gold: #f5c451;
-  --gold-2: #eab308;
+  /* Accents — drawn from the school crest (gold border, blue mountain) */
+  --accent: #1f4ea3;
+  --gold: #f2c200;
+  --gold-2: #d6ab00;
   --gold-text: #2c2406;
+  --crest-cyan: #8fd3e6;
+  --crest-maroon: #7b2e2e;
 
   /* Light surface */
   --bg: #f6f7f9;
@@ -96,9 +98,10 @@ label { font-size: 0.78rem; font-weight: 600; color: var(--text-2); display: blo
   background: #fff; border-radius: 16px; padding: 2.4rem; width: 100%; max-width: 380px;
   box-shadow: 0 20px 50px rgba(0, 0, 0, .35); text-align: center;
 }
-.brand-icon { font-size: 2.4rem; }
-.brand h1 { margin: 0.5rem 0 0; font-size: 1.4rem; color: var(--text); }
-.brand-tag { color: var(--muted); margin: 0.2rem 0 1.6rem; font-size: 0.9rem; }
+.brand-icon { font-size: 2.4rem; height: 76px; display: flex; align-items: center; justify-content: center; }
+.brand-icon img { max-height: 76px; max-width: 140px; object-fit: contain; }
+.brand h1 { margin: 0.6rem 0 0; font-size: 1.3rem; color: var(--text); line-height: 1.2; }
+.brand-tag { color: var(--muted); margin: 0.25rem 0 1.6rem; font-size: 0.85rem; font-family: var(--font-mono); text-transform: uppercase; letter-spacing: 0.1em; }
 #google-signin { display: flex; justify-content: center; min-height: 1px; }
 .signin-hint { color: var(--muted); font-size: 0.82rem; margin: 0.7rem 0 0; }
 .signin-note { color: var(--muted); font-size: 0.8rem; background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 0.6rem 0.7rem; margin: 0.4rem 0 0.2rem; line-height: 1.5; }
@@ -131,7 +134,13 @@ label { font-size: 0.78rem; font-weight: 600; color: var(--text-2); display: blo
   background: linear-gradient(135deg, #1d2f47, #0f1b2c); border: 1px solid var(--sidebar-line);
   display: flex; align-items: center; justify-content: center; font-size: 1.2rem; overflow: hidden;
 }
-.brand-crest img { width: 100%; height: 100%; object-fit: cover; }
+.brand-crest img { width: 100%; height: 100%; object-fit: contain; }
+.brand-crest.has-logo { background: #fff; border-color: transparent; }
+
+/* Admin logo upload */
+.logo-row { display: flex; align-items: center; gap: 1rem; }
+.logo-preview { width: 64px; height: 64px; border-radius: 12px; background: var(--bg); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; font-size: 1.6rem; overflow: hidden; flex: 0 0 auto; }
+.logo-preview img { width: 100%; height: 100%; object-fit: contain; }
 .brand-name { color: #fff; font-weight: 700; font-size: 0.95rem; line-height: 1.15; font-family: var(--font-sans); }
 .brand-sub { color: var(--sidebar-label); font-size: 0.6rem; margin-top: 0.2rem; }
 
@@ -148,7 +157,7 @@ label { font-size: 0.78rem; font-weight: 600; color: var(--text-2); display: blo
 .nav-item.active .nav-ico { opacity: 1; }
 .nav-item.active::before {
   content: ''; position: absolute; left: -0.9rem; top: 50%; transform: translateY(-50%);
-  width: 3px; height: 60%; background: var(--accent); border-radius: 0 3px 3px 0;
+  width: 3px; height: 60%; background: var(--gold); border-radius: 0 3px 3px 0;
 }
 
 .cta-btn {

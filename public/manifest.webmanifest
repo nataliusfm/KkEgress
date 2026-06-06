@@ -1,7 +1,7 @@
 {
-  "name": "School Emergency Drill Tracking",
-  "short_name": "Drill Tracker",
-  "description": "Track and report emergency evacuation drills in real time.",
+  "name": "Kuala Kencana Drill — Yayasan Pendidikan Jayawijaya",
+  "short_name": "KK Drill",
+  "description": "Emergency evacuation drill tracking & reporting for Yayasan Pendidikan Jayawijaya, Kuala Kencana.",
   "start_url": "/",
   "display": "standalone",
   "orientation": "portrait",

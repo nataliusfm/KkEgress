@@ -5,9 +5,9 @@
   --sidebar-label: #5b6878;
   --sidebar-text: #9aa6b6;
   --sidebar-hover: rgba(255, 255, 255, 0.06);
-  --accent: #2563eb;
-  --gold: #f5c451;
-  --gold-2: #eab308;
+  --accent: #1f4ea3;
+  --gold: #f2c200;
+  --gold-2: #d6ab00;
   --gold-text: #2c2406;
   --bg: #f6f7f9;
   --card: #ffffff;
@@ -63,8 +63,9 @@ h1, h2, h3 { font-family: var(--font-serif); font-weight: 500; letter-spacing: -
 .branch-item.active { background: #fff; color: var(--sidebar-bg); font-weight: 600; }
 .branch-item.active::before {
   content: ''; position: absolute; left: -0.9rem; top: 50%; transform: translateY(-50%);
-  width: 3px; height: 60%; background: var(--accent); border-radius: 0 3px 3px 0;
+  width: 3px; height: 60%; background: var(--gold); border-radius: 0 3px 3px 0;
 }
+.brand-crest.has-logo { background: #fff; border-color: transparent; }
 .branch-ico { width: 18px; text-align: center; opacity: 0.85; }
 
 .cta-btn {

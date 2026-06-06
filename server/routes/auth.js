@@ -19,6 +19,7 @@ router.get('/config', (req, res) => {
     allowDevLogin: config.allowDevLogin,
     allowedEmailDomains: config.allowedEmailDomains,
     schoolName: db.getSchool().name,
+    logoUrl: db.getSchool().logoUrl || '',
   });
 });
 

@@ -89,7 +89,11 @@ async function init() {
   }
   configureMaps(state.config.mapsApiKey || '');
   document.getElementById('login-school-name').textContent =
-    state.config.schoolName || 'School Emergency Drill';
+    state.config.schoolName || 'Yayasan Pendidikan Jayawijaya';
+  if (state.config.logoUrl) {
+    document.getElementById('login-crest').innerHTML = `<img src="${escapeHtml(state.config.logoUrl)}" alt="">`;
+    document.getElementById('login-crest').classList.add('has-logo');
+  }
 
   setupLogin();
   setupChrome();
@@ -231,7 +235,9 @@ async function loadBrand() {
     const school = await api.get('/admin/school');
     if (school?.name) document.getElementById('sidebar-school-name').textContent = school.name;
     if (school?.logoUrl) {
-      document.getElementById('brand-crest').innerHTML = `<img src="${escapeHtml(school.logoUrl)}" alt="">`;
+      const crest = document.getElementById('brand-crest');
+      crest.innerHTML = `<img src="${escapeHtml(school.logoUrl)}" alt="">`;
+      crest.classList.add('has-logo');
     }
   } catch { /* ignore */ }
 }

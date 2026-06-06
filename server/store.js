@@ -15,9 +15,9 @@ const DATA_FILE = path.join(DATA_DIR, 'db.json');
  */
 const EMPTY = () => ({
   school: {
-    name: 'My School',
-    address: '',
-    location: { lat: -6.2, lng: 106.816666 }, // sensible default; configurable
+    name: 'Yayasan Pendidikan Jayawijaya',
+    address: 'Tembagapura · Kuala Kencana, Papua',
+    location: { lat: -4.0, lng: 136.88 }, // Kuala Kencana, Papua (configurable)
     logoUrl: '',
   },
   users: [],

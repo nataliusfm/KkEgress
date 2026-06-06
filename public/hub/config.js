@@ -34,9 +34,9 @@ window.HUB_CONFIG = {
     },
     {
       id: 'drill',
-      name: 'Emergency Drill System',
+      name: 'Kuala Kencana Drill',
       icon: '🚨',
-      desc: 'Real-time evacuation drill tracking & reporting.',
+      desc: 'Real-time emergency evacuation drill tracking & reporting.',
       url: 'https://web-production-ad2db.up.railway.app',
       status: 'live',
       branches: ['*'],

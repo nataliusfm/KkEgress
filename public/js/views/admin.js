@@ -1,13 +1,23 @@
 // Super-admin administration: school settings, users, assembly points,
 // drill types, and Google integration status.
-import { el, escapeHtml, toast } from '../util.js';
+import { el, escapeHtml, toast, compressImage } from '../util.js';
 
 export function renderAdmin(root, { api }) {
   root.appendChild(el(`
     <div>
       <div class="card">
         <h2>School Settings</h2>
-        <div class="grid-2">
+        <div class="logo-row">
+          <div class="logo-preview" id="s-logo-preview">🏫</div>
+          <div>
+            <label>School Logo / Crest</label>
+            <input id="s-logo-file" type="file" accept="image/*" hidden>
+            <button type="button" class="btn btn-ghost btn-sm" id="s-logo-pick">Upload logo</button>
+            <button type="button" class="btn btn-ghost btn-sm" id="s-logo-clear">Remove</button>
+            <p class="muted" id="s-logo-meta" style="margin:.4rem 0 0">Shown on the sidebar and login screen.</p>
+          </div>
+        </div>
+        <div class="grid-2" style="margin-top:1rem">
           <div class="field"><label>School Name</label><input id="s-name"></div>
           <div class="field"><label>Address</label><input id="s-address"></div>
           <div class="field"><label>Latitude</label><input id="s-lat" type="number" step="any"></div>
@@ -62,20 +72,43 @@ export function renderAdmin(root, { api }) {
     </div>`));
 
   // ── School ──
+  let logoUrl = '';
+  const logoPreview = root.querySelector('#s-logo-preview');
+  const setPreview = (url) => {
+    logoUrl = url || '';
+    logoPreview.innerHTML = logoUrl ? `<img src="${escapeHtml(logoUrl)}" alt="">` : '🏫';
+  };
+
   api.get('/admin/school').then((s) => {
     root.querySelector('#s-name').value = s.name || '';
     root.querySelector('#s-address').value = s.address || '';
     root.querySelector('#s-lat').value = s.location?.lat ?? '';
     root.querySelector('#s-lng').value = s.location?.lng ?? '';
+    setPreview(s.logoUrl || '');
   });
+
+  // Logo upload: compress to a small JPEG/PNG data URL stored in settings.
+  root.querySelector('#s-logo-pick').addEventListener('click', () => root.querySelector('#s-logo-file').click());
+  root.querySelector('#s-logo-clear').addEventListener('click', () => { setPreview(''); root.querySelector('#s-logo-meta').textContent = 'Logo will be removed on save.'; });
+  root.querySelector('#s-logo-file').addEventListener('change', async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    root.querySelector('#s-logo-meta').textContent = 'Processing…';
+    const blob = await compressImage(file, { maxBytes: 90 * 1024, maxDim: 320 });
+    const reader = new FileReader();
+    reader.onload = () => { setPreview(reader.result); root.querySelector('#s-logo-meta').textContent = `Ready · ${(blob.size / 1024).toFixed(0)} KB. Click Save Settings.`; };
+    reader.readAsDataURL(blob);
+  });
+
   root.querySelector('#s-save').addEventListener('click', async () => {
     try {
       await api.put('/admin/school', {
         name: root.querySelector('#s-name').value,
         address: root.querySelector('#s-address').value,
         location: { lat: +root.querySelector('#s-lat').value, lng: +root.querySelector('#s-lng').value },
+        logoUrl,
       });
-      toast('School settings saved.', 'success');
+      toast('School settings saved. Reload to see the logo everywhere.', 'success');
     } catch (e) { toast(e.message, 'error'); }
   });
 
