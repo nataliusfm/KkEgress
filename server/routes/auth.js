@@ -17,6 +17,7 @@ router.get('/config', (req, res) => {
     googleClientId: config.google.clientId,
     mapsApiKey: config.google.mapsApiKey,
     allowDevLogin: config.allowDevLogin,
+    allowedEmailDomains: config.allowedEmailDomains,
     schoolName: db.getSchool().name,
   });
 });

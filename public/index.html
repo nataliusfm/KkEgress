@@ -20,19 +20,26 @@
         <h1 id="login-school-name">School Emergency Drill</h1>
         <p class="brand-tag">Tracking &amp; Reporting System</p>
       </div>
-      <form id="pw-login-form">
-        <div class="field"><input id="pw-email" type="email" data-i18n-ph="login.email" placeholder="Email address" autocomplete="email" required /></div>
-        <div class="field"><input id="pw-password" type="password" data-i18n-ph="login.password" placeholder="Password" autocomplete="current-password" required /></div>
-        <button class="btn btn-primary btn-block" type="submit" data-i18n="login.signin">Sign In</button>
-      </form>
-      <div id="login-divider" class="login-divider hidden"><span>or</span></div>
+      <!-- Primary: school Google account -->
       <div id="google-signin"></div>
-      <div id="dev-login" class="dev-login hidden">
-        <p class="muted">Developer login (school email)</p>
-        <input id="dev-email" type="email" placeholder="you@school.edu" autocomplete="email" />
-        <input id="dev-name" type="text" placeholder="Your name" />
-        <button id="dev-login-btn" class="btn btn-ghost btn-block">Dev Sign in</button>
-      </div>
+      <p id="google-hint" class="signin-hint hidden">Sign in with your school Google account</p>
+      <div id="google-missing" class="signin-note hidden"></div>
+
+      <!-- Secondary: tucked away -->
+      <details id="other-signin" class="other-signin">
+        <summary>Other sign-in options</summary>
+        <form id="pw-login-form">
+          <div class="field"><input id="pw-email" type="email" data-i18n-ph="login.email" placeholder="Email address" autocomplete="email" /></div>
+          <div class="field"><input id="pw-password" type="password" data-i18n-ph="login.password" placeholder="Password" autocomplete="current-password" /></div>
+          <button class="btn btn-primary btn-block" type="submit" data-i18n="login.signin">Sign In</button>
+        </form>
+        <div id="dev-login" class="dev-login hidden">
+          <p class="muted">Developer login (school email)</p>
+          <input id="dev-email" type="email" placeholder="you@school.edu" autocomplete="email" />
+          <input id="dev-name" type="text" placeholder="Your name" />
+          <button id="dev-login-btn" class="btn btn-ghost btn-block">Dev Sign in</button>
+        </div>
+      </details>
       <p id="login-error" class="error-text"></p>
     </div>
   </section>

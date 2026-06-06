@@ -99,12 +99,21 @@ label { font-size: 0.78rem; font-weight: 600; color: var(--text-2); display: blo
 .brand-icon { font-size: 2.4rem; }
 .brand h1 { margin: 0.5rem 0 0; font-size: 1.4rem; color: var(--text); }
 .brand-tag { color: var(--muted); margin: 0.2rem 0 1.6rem; font-size: 0.9rem; }
+#google-signin { display: flex; justify-content: center; min-height: 1px; }
+.signin-hint { color: var(--muted); font-size: 0.82rem; margin: 0.7rem 0 0; }
+.signin-note { color: var(--muted); font-size: 0.8rem; background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 0.6rem 0.7rem; margin: 0.4rem 0 0.2rem; line-height: 1.5; }
+
+.other-signin { margin-top: 1rem; text-align: left; }
+.other-signin summary {
+  cursor: pointer; color: var(--muted); font-size: 0.82rem; font-weight: 600;
+  text-align: center; list-style: none; padding: 0.4rem; border-radius: 8px;
+}
+.other-signin summary::-webkit-details-marker { display: none; }
+.other-signin summary:hover { color: var(--text); }
+.other-signin[open] summary { margin-bottom: 0.8rem; }
 #pw-login-form { text-align: left; }
 #pw-login-form .field { margin-bottom: 0.7rem; }
-.login-divider { display: flex; align-items: center; gap: 0.6rem; margin: 1rem 0; color: var(--muted); font-size: 0.78rem; }
-.login-divider::before, .login-divider::after { content: ''; flex: 1; height: 1px; background: var(--border); }
-#google-signin { display: flex; justify-content: center; margin-bottom: 0.6rem; }
-.dev-login { margin-top: 0.8rem; }
+.dev-login { margin-top: 0.9rem; padding-top: 0.9rem; border-top: 1px solid var(--border); }
 .dev-login input { margin-bottom: 0.6rem; }
 
 /* ───────── App layout ───────── */

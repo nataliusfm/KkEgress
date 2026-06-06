@@ -129,7 +129,10 @@ function setupLogin() {
     }
   });
 
-  // Google Identity Services
+  const domains = state.config.allowedEmailDomains || [];
+  const domainHint = domains.length ? `Sign in with your ${domains.map((d) => '@' + d).join(' / ')} account` : 'Sign in with your school Google account';
+
+  // Primary: Google school account
   if (state.config.googleClientId && window.google?.accounts?.id) {
     google.accounts.id.initialize({
       client_id: state.config.googleClientId,
@@ -142,14 +145,22 @@ function setupLogin() {
       },
     });
     google.accounts.id.renderButton(document.getElementById('google-signin'),
-      { theme: 'filled_blue', size: 'large', width: 280 });
-    document.getElementById('login-divider').classList.remove('hidden');
+      { theme: 'filled_blue', size: 'large', shape: 'pill', text: 'signin_with', width: 300 });
+    const hint = document.getElementById('google-hint');
+    hint.textContent = domainHint;
+    hint.classList.remove('hidden');
   } else if (state.config.googleClientId) {
     // GIS script may still be loading; retry shortly.
     setTimeout(setupLogin, 400);
+  } else {
+    // Google not configured yet — guide the admin and reveal password login.
+    const note = document.getElementById('google-missing');
+    note.textContent = 'Google sign-in is not set up yet. Use email & password below, or set GOOGLE_CLIENT_ID to enable school-account sign-in.';
+    note.classList.remove('hidden');
+    document.getElementById('other-signin').open = true;
   }
 
-  // Dev login
+  // Dev login (only when explicitly enabled)
   if (state.config.allowDevLogin) {
     document.getElementById('dev-login').classList.remove('hidden');
     document.getElementById('dev-login-btn').addEventListener('click', async () => {
