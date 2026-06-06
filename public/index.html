@@ -17,12 +17,19 @@
         <h1 id="login-school-name">School Emergency Drill</h1>
         <p>Tracking &amp; Reporting System</p>
       </div>
+      <!-- Password login (always shown) -->
+      <form id="pw-login-form">
+        <div class="field"><input id="pw-email" type="email" placeholder="Email address" autocomplete="email" required /></div>
+        <div class="field"><input id="pw-password" type="password" placeholder="Password" autocomplete="current-password" required /></div>
+        <button class="btn btn-primary btn-block" type="submit">Sign In</button>
+      </form>
+      <div id="login-divider" class="login-divider hidden"><span>or</span></div>
       <div id="google-signin"></div>
       <div id="dev-login" class="dev-login hidden">
         <p class="muted">Developer login (school email)</p>
         <input id="dev-email" type="email" placeholder="you@school.edu" autocomplete="email" />
         <input id="dev-name" type="text" placeholder="Your name" />
-        <button id="dev-login-btn" class="btn btn-primary">Sign in</button>
+        <button id="dev-login-btn" class="btn btn-ghost btn-block">Dev Sign in</button>
       </div>
       <p id="login-error" class="error-text"></p>
       <p class="offline-banner hidden" id="login-offline">⚠ You are offline</p>

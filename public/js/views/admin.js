@@ -33,9 +33,10 @@ export function renderAdmin(root, { api }) {
           <div class="field"><label>Employee ID</label><input id="u-empid"></div>
           <div class="field"><label>Team / Class</label><input id="u-team"></div>
           <div class="field"><label>Assigned Students</label><input id="u-students" type="number" min="0" value="0"></div>
+          <div class="field"><label>Password</label><input id="u-password" type="password" placeholder="Set login password"></div>
           <div class="field" style="align-self:end"><button class="btn btn-primary" type="submit">Add User</button></div>
         </form>
-        <div class="table-wrap"><table><thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Team</th><th></th></tr></thead>
+        <div class="table-wrap"><table><thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Team</th><th>Password</th><th></th></tr></thead>
           <tbody id="u-rows"></tbody></table></div>
       </div>
 
@@ -96,14 +97,22 @@ export function renderAdmin(root, { api }) {
     root.querySelector('#u-rows').innerHTML = users.map((u) => `<tr>
       <td>${escapeHtml(u.name)}</td><td>${escapeHtml(u.email)}</td>
       <td><span class="tag">${escapeHtml(u.role)}</span></td><td>${escapeHtml(u.teamName || '—')}</td>
+      <td><span class="pill ${u.hasPassword ? 'green' : 'gray'}">${u.hasPassword ? 'Set' : 'Not set'}</span></td>
       <td style="display:flex;gap:.3rem">
         <button class="btn btn-sm btn-ghost" data-edit="${u.id}" data-name="${escapeHtml(u.name)}">✏️</button>
+        <button class="btn btn-sm btn-ghost" data-setpw="${u.id}" title="Set password">🔑</button>
         <button class="btn btn-sm btn-danger" data-del="${u.id}">✕</button>
       </td></tr>`).join('');
     root.querySelectorAll('[data-edit]').forEach((b) => b.addEventListener('click', async () => {
       const newName = prompt('Edit name:', b.dataset.name);
       if (!newName || newName === b.dataset.name) return;
       try { await api.put(`/admin/users/${b.dataset.edit}`, { name: newName }); loadUsers(); toast('Name updated.', 'success'); }
+      catch (e) { toast(e.message, 'error'); }
+    }));
+    root.querySelectorAll('[data-setpw]').forEach((b) => b.addEventListener('click', async () => {
+      const pw = prompt('Set password for this user (min 6 characters):');
+      if (!pw) return;
+      try { await api.post(`/admin/users/${b.dataset.setpw}/set-password`, { password: pw }); loadUsers(); toast('Password set.', 'success'); }
       catch (e) { toast(e.message, 'error'); }
     }));
     root.querySelectorAll('[data-del]').forEach((b) => b.addEventListener('click', async () => {
@@ -121,6 +130,7 @@ export function renderAdmin(root, { api }) {
         employeeId: root.querySelector('#u-empid').value,
         teamName: root.querySelector('#u-team').value,
         assignedStudents: root.querySelector('#u-students').value,
+        password: root.querySelector('#u-password').value,
       });
       toast('User added.', 'success');
       e.target.reset(); loadUsers();

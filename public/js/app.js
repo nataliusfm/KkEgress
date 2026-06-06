@@ -67,6 +67,21 @@ async function init() {
 function setupLogin() {
   const errEl = document.getElementById('login-error');
 
+  // Password login form (always visible)
+  document.getElementById('pw-login-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    errEl.textContent = '';
+    const email = document.getElementById('pw-email').value.trim();
+    const password = document.getElementById('pw-password').value;
+    try {
+      const { token, user } = await api.post('/auth/login', { email, password });
+      auth.token = token;
+      onAuthenticated(user);
+    } catch (err) {
+      errEl.textContent = err.message;
+    }
+  });
+
   // Google Identity Services
   if (state.config.googleClientId && window.google?.accounts?.id) {
     google.accounts.id.initialize({
@@ -81,6 +96,7 @@ function setupLogin() {
     });
     google.accounts.id.renderButton(document.getElementById('google-signin'),
       { theme: 'filled_blue', size: 'large', width: 280 });
+    document.getElementById('login-divider').classList.remove('hidden');
   } else if (state.config.googleClientId) {
     // GIS script may still be loading; retry shortly.
     setTimeout(setupLogin, 400);

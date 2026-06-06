@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import bcrypt from 'bcryptjs';
 import { ROLES } from '../config.js';
 import { db } from '../store.js';
 import { requireAuth, requireRole, audit } from '../middleware.js';
@@ -31,11 +32,12 @@ router.get('/users', requireRole(ROLES.SUPER_ADMIN, ROLES.COORDINATOR), (req, re
   res.json(db.users().map(publicUser));
 });
 
-router.post('/users', ADMIN, (req, res) => {
-  const { email, name, role, employeeId, teamName, assemblyPointId, assignedStudents } = req.body;
+router.post('/users', ADMIN, async (req, res) => {
+  const { email, name, role, employeeId, teamName, assemblyPointId, assignedStudents, password } = req.body;
   if (!email || !name) return res.status(400).json({ error: 'Email and name required.' });
   if (db.findUserByEmail(email)) return res.status(409).json({ error: 'User already exists.' });
   if (!Object.values(ROLES).includes(role)) return res.status(400).json({ error: 'Invalid role.' });
+  const passwordHash = password ? await bcrypt.hash(password, 10) : '';
   const user = db.addUser({
     email: email.toLowerCase(),
     name,
@@ -44,6 +46,7 @@ router.post('/users', ADMIN, (req, res) => {
     teamName: teamName || '',
     assemblyPointId: assemblyPointId || '',
     assignedStudents: Number(assignedStudents) || 0,
+    passwordHash,
   });
   audit(req, 'CREATE_USER', { email: user.email, role: user.role });
   res.status(201).json(publicUser(user));
@@ -61,6 +64,17 @@ router.put('/users/:id', ADMIN, (req, res) => {
   if (!user) return res.status(404).json({ error: 'User not found.' });
   audit(req, 'UPDATE_USER', { id: user.id, patch });
   res.json(publicUser(user));
+});
+
+/** Admin sets or resets a user's password. */
+router.post('/users/:id/set-password', ADMIN, async (req, res) => {
+  const { password } = req.body;
+  if (!password || password.length < 6) return res.status(400).json({ error: 'Password must be at least 6 characters.' });
+  const passwordHash = await bcrypt.hash(password, 10);
+  const user = db.updateUser(req.params.id, { passwordHash });
+  if (!user) return res.status(404).json({ error: 'User not found.' });
+  audit(req, 'SET_PASSWORD', { id: user.id });
+  res.json({ ok: true });
 });
 
 router.delete('/users/:id', ADMIN, (req, res) => {

@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import bcrypt from 'bcryptjs';
 import { config } from '../config.js';
 import { db } from '../store.js';
 import {
@@ -18,6 +19,26 @@ router.get('/config', (req, res) => {
     allowDevLogin: config.allowDevLogin,
     schoolName: db.getSchool().name,
   });
+});
+
+/** Email + password login. */
+router.post('/login', async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    if (!email || !password) return res.status(400).json({ error: 'Email and password are required.' });
+
+    const user = db.findUserByEmail(email);
+    if (!user || !user.passwordHash) {
+      return res.status(401).json({ error: 'Invalid email or password.' });
+    }
+    const ok = await bcrypt.compare(password, user.passwordHash);
+    if (!ok) return res.status(401).json({ error: 'Invalid email or password.' });
+
+    audit({ user }, 'LOGIN', { method: 'password' });
+    res.json({ token: signSession(user), user: publicUser(user) });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 /** Exchange a Google ID token for an app session. */
@@ -64,6 +85,7 @@ export function publicUser(u) {
     teamName: u.teamName || '',
     assemblyPointId: u.assemblyPointId || '',
     assignedStudents: u.assignedStudents || 0,
+    hasPassword: !!u.passwordHash,
   };
 }
 
