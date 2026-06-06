@@ -15,7 +15,4 @@ ENV NODE_ENV=production
 ENV PORT=3000
 EXPOSE 3000
 
-# Persist the JSON data store across restarts when a volume is mounted here.
-VOLUME ["/app/data"]
-
 CMD ["npm", "start"]
