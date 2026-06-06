@@ -21,7 +21,7 @@
   --shadow: 0 1px 2px rgba(16, 24, 40, 0.04), 0 1px 3px rgba(16, 24, 40, 0.06);
   --radius: 10px;
   --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-  --font-serif: 'Newsreader', Georgia, 'Times New Roman', serif;
+  --font-serif: var(--font-sans);
   --font-mono: 'IBM Plex Mono', ui-monospace, 'SF Mono', Menlo, monospace;
 }
 
@@ -30,9 +30,9 @@ html, body { margin: 0; height: 100%; }
 body { font-family: var(--font-sans); background: var(--bg); color: var(--text); -webkit-font-smoothing: antialiased; }
 
 .nav-section, .stat .lbl, .topbar-title, .brand-sub, .eyebrow, .status-pill {
-  font-family: var(--font-mono); text-transform: uppercase; letter-spacing: 0.12em;
+  font-family: var(--font-sans); text-transform: uppercase; letter-spacing: 0.09em; font-weight: 600;
 }
-h1, h2, h3 { font-family: var(--font-serif); font-weight: 500; letter-spacing: -0.01em; }
+h1, h2, h3 { font-family: var(--font-sans); font-weight: 700; letter-spacing: -0.02em; }
 
 .app { display: grid; grid-template-columns: 256px 1fr; height: 100vh; overflow: hidden; }
 
