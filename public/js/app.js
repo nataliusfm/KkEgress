@@ -176,10 +176,19 @@ function setupLogin() {
   }
 }
 
+/** Render the sidebar org title with the last word on a second line. */
+function setBrandName(name) {
+  const node = document.getElementById('sidebar-school-name');
+  if (!node) return;
+  const safe = escapeHtml(name || 'School');
+  const i = safe.lastIndexOf(' ');
+  node.innerHTML = i > 0 ? `${safe.slice(0, i)}<br>${safe.slice(i + 1)}` : safe;
+}
+
 /**
  * Set a crest element to a logo image, trying (1) the configured logoUrl,
  * then (2) a built-in /img/logo.png, and falling back to an emoji if neither
- * loads. Lets us bake in a permanent logo by dropping a file at public/img/.
+ * loads.
  */
 function setCrest(id, url, fallback) {
   const node = document.getElementById(id);
@@ -213,7 +222,7 @@ async function onAuthenticated(user) {
   if (user.picture) { avatar.src = user.picture; avatar.style.display = 'block'; initialEl.style.display = 'none'; }
   else { avatar.style.display = 'none'; initialEl.style.display = 'block'; }
 
-  document.getElementById('sidebar-school-name').textContent = state.config.schoolName || 'School';
+  setBrandName(state.config.schoolName || 'Yayasan Pendidikan Jayawijaya');
 
   applyRoleVisibility();
   updateCta();
@@ -245,7 +254,7 @@ function updateCta() {
 async function loadBrand() {
   try {
     const school = await api.get('/admin/school');
-    if (school?.name) document.getElementById('sidebar-school-name').textContent = school.name;
+    if (school?.name) setBrandName(school.name);
     setCrest('brand-crest', school?.logoUrl, '🚨');
   } catch { /* ignore */ }
 }
